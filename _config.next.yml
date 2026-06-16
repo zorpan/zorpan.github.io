@@ -1,0 +1,164 @@
+# ---------------------------------------------------------------
+# NexT Theme Configuration
+# Docs: https://theme-next.js.org/
+# ---------------------------------------------------------------
+
+# ---------------------------------------------------------------
+# Scheme Settings
+# ---------------------------------------------------------------
+# Muse | Mist | Pisces | Gemini
+scheme: Gemini
+
+# ---------------------------------------------------------------
+# Dark Mode
+# ---------------------------------------------------------------
+darkmode: true
+
+# ---------------------------------------------------------------
+# Menu Settings
+# ---------------------------------------------------------------
+menu:
+  home: / || fa fa-home
+  tags: /tags/ || fa fa-tags
+  categories: /categories/ || fa fa-th
+  archives: /archives/ || fa fa-archive
+  # about: /about/ || fa fa-user
+
+# Enable / Disable menu icons / item labels.
+menu_settings:
+  icons: true
+  labels: true
+
+# ---------------------------------------------------------------
+# Social Links
+# ---------------------------------------------------------------
+social:
+  GitHub: https://github.com/zorpan || fab fa-github
+  # E-Mail: mailto:your@email.com || fa fa-envelope
+
+social_icons:
+  enable: true
+  icons_only: false
+  transition: false
+
+# ---------------------------------------------------------------
+# Avatar Settings
+# ---------------------------------------------------------------
+avatar:
+  url: /images/avatar.gif
+  rounded: true
+  rotated: false
+
+# ---------------------------------------------------------------
+# Code Blocks Settings
+# ---------------------------------------------------------------
+codeblock:
+  # Code Highlight theme
+  # Available values: normal | night | night eighties | night blue | night bright | solarized | solarized dark | galactic
+  highlight_theme: night eighties
+  # Add copy button on code block
+  copy_button:
+    enable: true
+    style: mac
+
+# ---------------------------------------------------------------
+# Social Sharing
+# ---------------------------------------------------------------
+# Available values: js-socials | need-share-button
+social_share:
+  enable: true
+  sites: facebook,twitter,wechat,weibo,qq
+
+# ---------------------------------------------------------------
+# Reading Progress
+# ---------------------------------------------------------------
+reading_progress:
+  enable: true
+  position: top
+  color: "#37c6c0"
+  height: 3px
+
+# ---------------------------------------------------------------
+# Back to Top
+# ---------------------------------------------------------------
+back2top:
+  enable: true
+  sidebar: false
+  scrollpercent: true
+
+# ---------------------------------------------------------------
+# Footer Settings
+# ---------------------------------------------------------------
+footer:
+  since: 2025
+  icon:
+    name: fa fa-heart
+    animated: true
+    color: "#ff6b81"
+  copyright: zorpan
+  powered:
+    enable: true
+    version: true
+  beian:
+    enable: false
+
+# ---------------------------------------------------------------
+# Post Settings
+# ---------------------------------------------------------------
+post_meta:
+  item_text: true
+  created_at: true
+  updated_at:
+    enable: true
+    another_day: true
+  categories: true
+
+# ---------------------------------------------------------------
+# Tag Cloud
+# ---------------------------------------------------------------
+tagcloud:
+  min: 12
+  max: 30
+  amount: 200
+  orderby: name
+  order: 1
+
+# ---------------------------------------------------------------
+# Misc Theme Settings
+# ---------------------------------------------------------------
+mobile_layout_economy: true
+android_chrome_color: "#1a1a1a"
+custom_scrollbar: true
+
+# ---------------------------------------------------------------
+# SEO Settings
+# ---------------------------------------------------------------
+seo: true
+index_with_subtitle: true
+
+# ---------------------------------------------------------------
+# Tags Settings
+# ---------------------------------------------------------------
+# Tabs tag
+tabs:
+  enable: true
+  transition:
+    tabs: true
+    labels: true
+  border_radius: 0
+
+# ---------------------------------------------------------------
+# Related Popular Posts
+# ---------------------------------------------------------------
+related_posts:
+  enable: true
+  icon: fa fa-signs-post
+
+# ---------------------------------------------------------------
+# Math Settings
+# ---------------------------------------------------------------
+math:
+  mathjax:
+    enable: false
+  katex:
+    enable: false
