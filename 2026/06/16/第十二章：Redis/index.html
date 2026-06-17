@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"zorpan.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"mac"},"fold":{"enable":false,"height":500},"language":false,"highlight_theme":"night eighties"},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis 深度解析：数据结构、持久化与分布式锁">
+<meta property="og:url" content="https://zorpan.github.io/2026/06/16/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%EF%BC%9ARedis/index.html">
+<meta property="og:site_name" content="Java 进阶之路">
+<meta property="og:description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-16T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-17T08:21:02.353Z">
+<meta property="article:author" content="zorpan">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="分布式锁">
+<meta property="article:tag" content="缓存">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://zorpan.github.io/2026/06/16/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%EF%BC%9ARedis/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://zorpan.github.io/2026/06/16/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%EF%BC%9ARedis/","path":"2026/06/16/第十二章：Redis/","title":"Redis 深度解析：数据结构、持久化与分布式锁"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis 深度解析：数据结构、持久化与分布式锁 | Java 进阶之路</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Java 进阶之路</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">深入浅出，从入门到架构师</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E5%8F%8A%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">12.1 数据类型及底层数据结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-1-1-%E4%BA%94%E7%A7%8D%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.1.</span> <span class="nav-text">12.1.1 五种基本数据类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-1-2-%E6%A0%B8%E5%BF%83%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.2.</span> <span class="nav-text">12.1.2 核心底层数据结构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">12.2 持久化机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-2-1-RDB%EF%BC%88Redis-Database%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">12.2.1 RDB（Redis Database）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-2-2-AOF%EF%BC%88Append-Only-File%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">12.2.2 AOF（Append Only File）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-2-3-%E6%B7%B7%E5%90%88%E6%8C%81%E4%B9%85%E5%8C%96%EF%BC%88Redis-4-0-%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">12.2.3 混合持久化（Redis 4.0+）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-3-%E5%86%85%E5%AD%98%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5"><span class="nav-number">3.</span> <span class="nav-text">12.3 内存淘汰策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-3-1-%E5%85%AB%E7%A7%8D%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5"><span class="nav-number">3.1.</span> <span class="nav-text">12.3.1 八种淘汰策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-3-2-LRU-vs-LFU"><span class="nav-number">3.2.</span> <span class="nav-text">12.3.2 LRU vs LFU</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-4-Redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%BC%94%E8%BF%9B"><span class="nav-number">4.</span> <span class="nav-text">12.4 Redis 单线程模型与多线程演进</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-4-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E7%BA%BF%E7%A8%8B%E8%BF%98%E8%BF%99%E4%B9%88%E5%BF%AB%EF%BC%9F"><span class="nav-number">4.1.</span> <span class="nav-text">12.4.1 为什么单线程还这么快？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-4-2-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%BC%94%E8%BF%9B"><span class="nav-number">4.2.</span> <span class="nav-text">12.4.2 多线程演进</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-5-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%E3%80%81Cluster-%E9%9B%86%E7%BE%A4"><span class="nav-number">5.</span> <span class="nav-text">12.5 主从复制、哨兵机制、Cluster 集群</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-5-1-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6"><span class="nav-number">5.1.</span> <span class="nav-text">12.5.1 主从复制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-5-2-%E5%93%A8%E5%85%B5%EF%BC%88Sentinel%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">12.5.2 哨兵（Sentinel）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-5-3-Cluster-%E9%9B%86%E7%BE%A4"><span class="nav-number">5.3.</span> <span class="nav-text">12.5.3 Cluster 集群</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-6-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81"><span class="nav-number">6.</span> <span class="nav-text">12.6 分布式锁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-6-1-%E5%9F%BA%E4%BA%8E-SETNX"><span class="nav-number">6.1.</span> <span class="nav-text">12.6.1 基于 SETNX</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-6-2-Redisson-%E5%AE%9E%E7%8E%B0%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-number">6.2.</span> <span class="nav-text">12.6.2 Redisson 实现（推荐）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-6-3-RedLock%EF%BC%88%E6%9C%89%E4%BA%89%E8%AE%AE%EF%BC%89"><span class="nav-number">6.3.</span> <span class="nav-text">12.6.3 RedLock（有争议）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-7-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E3%80%81%E5%87%BB%E7%A9%BF%E3%80%81%E9%9B%AA%E5%B4%A9"><span class="nav-number">7.</span> <span class="nav-text">12.7 缓存穿透、击穿、雪崩</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-7-1-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F"><span class="nav-number">7.1.</span> <span class="nav-text">12.7.1 缓存穿透</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-7-2-%E7%BC%93%E5%AD%98%E5%87%BB%E7%A9%BF"><span class="nav-number">7.2.</span> <span class="nav-text">12.7.2 缓存击穿</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-7-3-%E7%BC%93%E5%AD%98%E9%9B%AA%E5%B4%A9"><span class="nav-number">7.3.</span> <span class="nav-text">12.7.3 缓存雪崩</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-8-%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E4%B8%8E-Stream"><span class="nav-number">8.</span> <span class="nav-text">12.8 延迟队列与 Stream</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-8-1-%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0"><span class="nav-number">8.1.</span> <span class="nav-text">12.8.1 延迟队列实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-9-Lua-%E8%84%9A%E6%9C%AC%E4%B8%8E%E4%BA%8B%E5%8A%A1"><span class="nav-number">9.</span> <span class="nav-text">12.9 Lua 脚本与事务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#12-9-1-Redis-%E4%BA%8B%E5%8A%A1"><span class="nav-number">9.1.</span> <span class="nav-text">12.9.1 Redis 事务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-9-2-Lua-%E8%84%9A%E6%9C%AC%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-number">9.2.</span> <span class="nav-text">12.9.2 Lua 脚本（推荐）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89"><span class="nav-number">10.</span> <span class="nav-text">面试精选</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Redis-%E6%9C%89%E5%93%AA%E4%BA%9B%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%EF%BC%9F%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">10.1.</span> <span class="nav-text">1. Redis 有哪些数据类型？底层数据结构是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Redis-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E8%B7%B3%E8%A1%A8%E4%B8%8D%E7%94%A8%E7%BA%A2%E9%BB%91%E6%A0%91%E5%AE%9E%E7%8E%B0-ZSet%EF%BC%9F"><span class="nav-number">10.2.</span> <span class="nav-text">2. Redis 为什么用跳表不用红黑树实现 ZSet？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-RDB-%E5%92%8C-AOF-%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F%E6%80%8E%E4%B9%88%E9%80%89%EF%BC%9F"><span class="nav-number">10.3.</span> <span class="nav-text">3. RDB 和 AOF 的区别？怎么选？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-Redis-%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E6%B5%81%E7%A8%8B%E6%98%AF%E6%80%8E%E6%A0%B7%E7%9A%84%EF%BC%9F"><span class="nav-number">10.4.</span> <span class="nav-text">4. Redis 的持久化流程是怎样的？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E3%80%81%E5%87%BB%E7%A9%BF%E3%80%81%E9%9B%AA%E5%B4%A9%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%EF%BC%9F"><span class="nav-number">10.5.</span> <span class="nav-text">5. 缓存穿透、击穿、雪崩的区别和解决方案？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-Redis-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E6%80%8E%E4%B9%88%E5%AE%9E%E7%8E%B0%EF%BC%9F%E6%9C%89%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="nav-number">10.6.</span> <span class="nav-text">6. Redis 分布式锁怎么实现？有什么问题？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-Redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%98%E8%BF%99%E4%B9%88%E5%BF%AB%EF%BC%9F"><span class="nav-number">10.7.</span> <span class="nav-text">7. Redis 单线程为什么还这么快？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-Redis-Cluster-%E7%9A%84%E5%8E%9F%E7%90%86%EF%BC%9F"><span class="nav-number">10.8.</span> <span class="nav-text">8. Redis Cluster 的原理？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-Redis-%E5%92%8C-Memcached-%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">10.9.</span> <span class="nav-text">9. Redis 和 Memcached 的区别？</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zorpan"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zorpan</p>
+  <div class="site-description" itemprop="description">Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">13</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zorpan" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zorpan" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://zorpan.github.io/2026/06/16/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%EF%BC%9ARedis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zorpan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Java 进阶之路">
+      <meta itemprop="description" content="Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Redis 深度解析：数据结构、持久化与分布式锁 | Java 进阶之路">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis 深度解析：数据结构、持久化与分布式锁
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-16 14:00:00" itemprop="dateCreated datePublished" datetime="2026-06-16T14:00:00+08:00">2026-06-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-06-17 16:21:02" itemprop="dateModified" datetime="2026-06-17T16:21:02+08:00">2026-06-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java-%E8%BF%9B%E9%98%B6%E4%B9%8B%E8%B7%AF/" itemprop="url" rel="index"><span itemprop="name">Java 进阶之路</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="12-1-数据类型及底层数据结构"><a href="#12-1-数据类型及底层数据结构" class="headerlink" title="12.1 数据类型及底层数据结构"></a>12.1 数据类型及底层数据结构</h2><h3 id="12-1-1-五种基本数据类型"><a href="#12-1-1-五种基本数据类型" class="headerlink" title="12.1.1 五种基本数据类型"></a>12.1.1 五种基本数据类型</h3><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>底层编码</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>String</td>
+<td>int &#x2F; embstr &#x2F; raw (SDS)</td>
+<td>最常用，可存字符串、数字、二进制</td>
+</tr>
+<tr>
+<td>Hash</td>
+<td>ziplist &#x2F; hashtable</td>
+<td>键值对，适合存对象</td>
+</tr>
+<tr>
+<td>List</td>
+<td>quicklist（ziplist + 双向链表）</td>
+<td>有序列表，支持头尾操作</td>
+</tr>
+<tr>
+<td>Set</td>
+<td>intset &#x2F; hashtable</td>
+<td>无序不重复集合</td>
+</tr>
+<tr>
+<td>ZSet</td>
+<td>ziplist &#x2F; skiplist + hashtable</td>
+<td>有序集合，每个元素有分数</td>
+</tr>
+</tbody></table>
+<h3 id="12-1-2-核心底层数据结构"><a href="#12-1-2-核心底层数据结构" class="headerlink" title="12.1.2 核心底层数据结构"></a>12.1.2 核心底层数据结构</h3><p><strong>SDS（Simple Dynamic String）</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">    <span class="type">int</span> len;      <span class="comment">// 已使用长度</span></span><br><span class="line">    <span class="type">int</span> alloc;    <span class="comment">// 分配的总长度</span></span><br><span class="line">    <span class="type">char</span> buf[];   <span class="comment">// 字节数组</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>二进制安全：可存储任意二进制数据</li>
+<li>O(1) 获取长度（不需要遍历）</li>
+<li>预分配和惰性释放减少内存分配次数</li>
+<li>兼容 C 字符串函数</li>
+</ul>
+<p><strong>Dict（哈希表）</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">dict</span><br><span class="line">├── ht[0]：主哈希表</span><br><span class="line">└── ht[1]：渐进式 rehash 时使用</span><br><span class="line"></span><br><span class="line">每个哈希表：</span><br><span class="line">├── table[]：桶数组</span><br><span class="line">├── size：桶数量</span><br><span class="line">├── used：已存键值对数量</span><br><span class="line">└── sizemask：size - 1（用于取模）</span><br><span class="line"></span><br><span class="line">哈希冲突：链地址法</span><br><span class="line">扩容：used / size &gt; 1（无 BGSAVE 时）或 &gt; 5（有 BGSAVE 时）</span><br><span class="line">收缩：used / size &lt; 0.1</span><br><span class="line">渐进式 rehash：每次操作迁移一个桶，避免一次性迁移阻塞</span><br></pre></td></tr></table></figure>
+
+<p><strong>SkipList（跳表）</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Level 4:  1 ───────────────────────────→ 9 → NULL</span><br><span class="line">Level 3:  1 ──────→ 5 ──────────────────→ 9 → NULL</span><br><span class="line">Level 2:  1 ──→ 3 → 5 ──→ 7 ────────────→ 9 → NULL</span><br><span class="line">Level 1:  1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → NULL</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>多层链表结构，查找时间复杂度 O(log n)</li>
+<li>ZSet 的底层实现（当元素较多时）</li>
+<li>每个节点随机分配层高（概率 p&#x3D;0.25）</li>
+<li>比红黑树实现更简单，范围查询更高效</li>
+</ul>
+<p><strong>ZSet 为什么用跳表不用红黑树？</strong></p>
+<ol>
+<li>跳表实现更简单，代码更易维护</li>
+<li>范围查询更高效（跳表叶子节点链表直接遍历）</li>
+<li>并发友好（加锁粒度更细）</li>
+<li>内存占用可灵活调整（通过调整层高概率）</li>
+</ol>
+<p><strong>QuickList（快速列表，List 的底层）</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">quicklist = 双向链表 + 每个节点是一个 ziplist</span><br><span class="line">兼顾了链表的灵活操作和 ziplist 的内存紧凑</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="12-2-持久化机制"><a href="#12-2-持久化机制" class="headerlink" title="12.2 持久化机制"></a>12.2 持久化机制</h2><h3 id="12-2-1-RDB（Redis-Database）"><a href="#12-2-1-RDB（Redis-Database）" class="headerlink" title="12.2.1 RDB（Redis Database）"></a>12.2.1 RDB（Redis Database）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">将某个时间点的全量数据生成快照，保存为 dump.rdb 文件</span><br><span class="line"></span><br><span class="line">触发方式：</span><br><span class="line">- save：阻塞主线程（生产禁用）</span><br><span class="line">- bgsave：fork 子进程，利用 COW（Copy-On-Write）机制</span><br><span class="line">- 配置自动触发：save 3600 1（3600 秒内有 1 次修改）</span><br><span class="line"></span><br><span class="line">优势：文件紧凑，恢复速度快</span><br><span class="line">劣势：可能丢失最后一次快照后的数据</span><br></pre></td></tr></table></figure>
+
+<p><strong>COW（写时复制）机制：</strong></p>
+<ol>
+<li>bgsave fork 子进程，共享父进程内存页</li>
+<li>父进程有写操作时，复制一份内存页再修改（COW）</li>
+<li>子进程始终看到 fork 时的内存快照</li>
+</ol>
+<h3 id="12-2-2-AOF（Append-Only-File）"><a href="#12-2-2-AOF（Append-Only-File）" class="headerlink" title="12.2.2 AOF（Append Only File）"></a>12.2.2 AOF（Append Only File）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">记录每一条写命令，以追加方式写入日志文件</span><br><span class="line"></span><br><span class="line">写入策略：</span><br><span class="line">- always：每次写命令都 fsync（最安全，性能最差）</span><br><span class="line">- everysec：每秒 fsync（推荐，最多丢 1 秒数据）</span><br><span class="line">- no：由操作系统决定何时 fsync（性能最好，可能丢数据）</span><br><span class="line"></span><br><span class="line">AOF 重写：</span><br><span class="line">- 合并冗余命令，压缩 AOF 文件</span><br><span class="line">- bgrewriteaof 触发，fork 子进程重写</span><br><span class="line">- 重写期间新命令写入 AOF 缓冲区 + AOF 重写缓冲区</span><br><span class="line">- 子进程重写完成后，主进程将重写缓冲区内容追加到新 AOF 文件</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-2-3-混合持久化（Redis-4-0-）"><a href="#12-2-3-混合持久化（Redis-4-0-）" class="headerlink" title="12.2.3 混合持久化（Redis 4.0+）"></a>12.2.3 混合持久化（Redis 4.0+）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">AOF 重写时：前半部分用 RDB 格式（快），后半部分用 AOF 格式（增量）</span><br><span class="line">兼顾 RDB 的快速恢复和 AOF 的低数据丢失</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>数据安全</th>
+<th>恢复速度</th>
+<th>文件大小</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RDB</td>
+<td>可能丢数据</td>
+<td>快</td>
+<td>小</td>
+</tr>
+<tr>
+<td>AOF(everysec)</td>
+<td>最多丢 1 秒</td>
+<td>慢</td>
+<td>大</td>
+</tr>
+<tr>
+<td>混合持久化</td>
+<td>最多丢 1 秒</td>
+<td>较快</td>
+<td>中</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="12-3-内存淘汰策略"><a href="#12-3-内存淘汰策略" class="headerlink" title="12.3 内存淘汰策略"></a>12.3 内存淘汰策略</h2><h3 id="12-3-1-八种淘汰策略"><a href="#12-3-1-八种淘汰策略" class="headerlink" title="12.3.1 八种淘汰策略"></a>12.3.1 八种淘汰策略</h3><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>范围</th>
+<th>算法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>noeviction</td>
+<td>—</td>
+<td>—</td>
+<td>不淘汰，内存满时拒绝写入（默认）</td>
+</tr>
+<tr>
+<td>allkeys-lru</td>
+<td>所有 key</td>
+<td>LRU</td>
+<td>最近最少使用</td>
+</tr>
+<tr>
+<td>allkeys-lfu</td>
+<td>所有 key</td>
+<td>LFU</td>
+<td>最不经常使用（Redis 4.0+）</td>
+</tr>
+<tr>
+<td>allkeys-random</td>
+<td>所有 key</td>
+<td>随机</td>
+<td>随机淘汰</td>
+</tr>
+<tr>
+<td>volatile-lru</td>
+<td>设置了过期时间的 key</td>
+<td>LRU</td>
+<td>最近最少使用</td>
+</tr>
+<tr>
+<td>volatile-lfu</td>
+<td>设置了过期时间的 key</td>
+<td>LFU</td>
+<td>最不经常使用</td>
+</tr>
+<tr>
+<td>volatile-random</td>
+<td>设置了过期时间的 key</td>
+<td>随机</td>
+<td>随机淘汰</td>
+</tr>
+<tr>
+<td>volatile-ttl</td>
+<td>设置了过期时间的 key</td>
+<td>TTL</td>
+<td>淘汰最快过期的</td>
+</tr>
+</tbody></table>
+<p><strong>推荐：allkeys-lfu（热点数据保留）或 allkeys-lru（通用场景）</strong></p>
+<h3 id="12-3-2-LRU-vs-LFU"><a href="#12-3-2-LRU-vs-LFU" class="headerlink" title="12.3.2 LRU vs LFU"></a>12.3.2 LRU vs LFU</h3><ul>
+<li><strong>LRU（Least Recently Used）</strong>：淘汰最久未访问的数据。问题：偶尔访问一次的冷数据不会被淘汰</li>
+<li><strong>LFU（Least Frequently Used）</strong>：淘汰访问频率最低的数据。更精准地识别热点数据</li>
+<li>Redis 的 LRU&#x2F;LFU 是近似实现（采样法），不是精确实现（精确实现需要额外链表，内存开销大）</li>
+</ul>
+<hr>
+<h2 id="12-4-Redis-单线程模型与多线程演进"><a href="#12-4-Redis-单线程模型与多线程演进" class="headerlink" title="12.4 Redis 单线程模型与多线程演进"></a>12.4 Redis 单线程模型与多线程演进</h2><h3 id="12-4-1-为什么单线程还这么快？"><a href="#12-4-1-为什么单线程还这么快？" class="headerlink" title="12.4.1 为什么单线程还这么快？"></a>12.4.1 为什么单线程还这么快？</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Redis 单线程模型：</span><br><span class="line">1. 基于 epoll（Linux）的 IO 多路复用</span><br><span class="line">2. 纯内存操作（数据在内存中，无磁盘 IO）</span><br><span class="line">3. 单线程避免了上下文切换和锁竞争</span><br><span class="line">4. 高效数据结构（SDS、跳表、哈希表等）</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-4-2-多线程演进"><a href="#12-4-2-多线程演进" class="headerlink" title="12.4.2 多线程演进"></a>12.4.2 多线程演进</h3><ul>
+<li>Redis 4.0：引入多线程处理异步任务（删除大 key、AOF 重写）</li>
+<li>Redis 6.0：引入多线程 IO（网络 IO 用多线程，命令执行仍单线程）</li>
+<li>核心命令执行仍然是单线程，保证线程安全</li>
+</ul>
+<hr>
+<h2 id="12-5-主从复制、哨兵机制、Cluster-集群"><a href="#12-5-主从复制、哨兵机制、Cluster-集群" class="headerlink" title="12.5 主从复制、哨兵机制、Cluster 集群"></a>12.5 主从复制、哨兵机制、Cluster 集群</h2><h3 id="12-5-1-主从复制"><a href="#12-5-1-主从复制" class="headerlink" title="12.5.1 主从复制"></a>12.5.1 主从复制</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">全量复制（首次连接）：</span><br><span class="line">1. Slave 发送 PSYNC ? -1</span><br><span class="line">2. Master 执行 BGSAVE 生成 RDB，发送给 Slave</span><br><span class="line">3. Slave 加载 RDB</span><br><span class="line">4. Master 将期间的写命令发送给 Slave</span><br><span class="line"></span><br><span class="line">增量复制（断线重连）：</span><br><span class="line">1. Slave 携带 offset 重连</span><br><span class="line">2. Master 检查 repl_backlog 中是否有 Slave 需要的数据</span><br><span class="line">3. 有则增量发送，无则全量复制</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-5-2-哨兵（Sentinel）"><a href="#12-5-2-哨兵（Sentinel）" class="headerlink" title="12.5.2 哨兵（Sentinel）"></a>12.5.2 哨兵（Sentinel）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Sentinel 集群（至少 3 个节点）</span><br><span class="line">├── 监控：检测主从节点是否正常工作</span><br><span class="line">├── 通知：故障时通知客户端</span><br><span class="line">└── 自动故障转移：主节点下线时选举新主节点</span><br><span class="line"></span><br><span class="line">故障判定：</span><br><span class="line">- 主观下线（SDOWN）：单个 Sentinel 认为节点下线</span><br><span class="line">- 客观下线（ODOWN）：quorum 个 Sentinel 都认为主节点下线</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-5-3-Cluster-集群"><a href="#12-5-3-Cluster-集群" class="headerlink" title="12.5.3 Cluster 集群"></a>12.5.3 Cluster 集群</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Redis Cluster：</span><br><span class="line">- 数据分片：16384 个槽（slot），每个节点负责一部分槽</span><br><span class="line">- 去中心化：任意节点都可以接收请求，不在本节点的槽则重定向</span><br><span class="line">- Gossip 协议：节点间互相交换状态信息</span><br><span class="line"></span><br><span class="line">槽位计算：CRC16(key) % 16384</span><br><span class="line"></span><br><span class="line">扩缩容：</span><br><span class="line">- 添加节点：从其他节点迁移部分槽</span><br><span class="line">- 移除节点：将该节点的槽迁移到其他节点</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="12-6-分布式锁"><a href="#12-6-分布式锁" class="headerlink" title="12.6 分布式锁"></a>12.6 分布式锁</h2><h3 id="12-6-1-基于-SETNX"><a href="#12-6-1-基于-SETNX" class="headerlink" title="12.6.1 基于 SETNX"></a>12.6.1 基于 SETNX</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 基本加锁（原子操作）</span></span><br><span class="line">SET lock_key unique_value NX EX 30</span><br><span class="line"><span class="comment"># NX：不存在才设置</span></span><br><span class="line"><span class="comment"># EX 30：过期时间 30 秒</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 释放锁（Lua 脚本保证原子性）</span></span><br><span class="line"><span class="keyword">if</span> redis.call(<span class="string">&quot;get&quot;</span>, KEYS[1]) == ARGV[1] <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">return</span> redis.call(<span class="string">&quot;del&quot;</span>, KEYS[1])</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="built_in">return</span> 0</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-6-2-Redisson-实现（推荐）"><a href="#12-6-2-Redisson-实现（推荐）" class="headerlink" title="12.6.2 Redisson 实现（推荐）"></a>12.6.2 Redisson 实现（推荐）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">RLock</span> <span class="variable">lock</span> <span class="operator">=</span> redisson.getLock(<span class="string">&quot;myLock&quot;</span>);</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    lock.lock(<span class="number">30</span>, TimeUnit.SECONDS);  <span class="comment">// 自动续期</span></span><br><span class="line">    <span class="comment">// 业务逻辑</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    lock.unlock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Redisson 看门狗机制：</strong></p>
+<ul>
+<li>加锁时默认过期时间 30 秒</li>
+<li>后台线程每 10 秒检查锁是否还在，自动续期到 30 秒</li>
+<li>业务完成后手动释放锁，不再续期</li>
+</ul>
+<h3 id="12-6-3-RedLock（有争议）"><a href="#12-6-3-RedLock（有争议）" class="headerlink" title="12.6.3 RedLock（有争议）"></a>12.6.3 RedLock（有争议）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">向 N 个独立的 Redis 节点（推荐 5 个）加锁</span><br><span class="line">多数（N/2 + 1）加锁成功才算成功</span><br><span class="line">总耗时小于锁的有效期才算有效</span><br><span class="line"></span><br><span class="line">问题：时钟漂移、网络分区可能导致不安全</span><br><span class="line">Martin Kleppmann 和 antirez 的著名争论</span><br><span class="line">实际生产中大多数场景用 Redisson 单节点即可</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="12-7-缓存穿透、击穿、雪崩"><a href="#12-7-缓存穿透、击穿、雪崩" class="headerlink" title="12.7 缓存穿透、击穿、雪崩"></a>12.7 缓存穿透、击穿、雪崩</h2><h3 id="12-7-1-缓存穿透"><a href="#12-7-1-缓存穿透" class="headerlink" title="12.7.1 缓存穿透"></a>12.7.1 缓存穿透</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">查询一个一定不存在的数据，缓存和数据库都没有</span><br><span class="line">每次请求都打到数据库</span><br><span class="line"></span><br><span class="line">解决方案：</span><br><span class="line">1. 缓存空值：数据库查不到也缓存 null，设置较短过期时间</span><br><span class="line">2. 布隆过滤器：在缓存前加一层布隆过滤器</span><br><span class="line">   - 将所有可能存在的数据哈希到位数组中</span><br><span class="line">   - 请求先查布隆过滤器，不存在则直接返回</span><br><span class="line">   - 可能误判存在，不会误判不存在</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-7-2-缓存击穿"><a href="#12-7-2-缓存击穿" class="headerlink" title="12.7.2 缓存击穿"></a>12.7.2 缓存击穿</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">某个热点 key 过期的瞬间，大量请求打到数据库</span><br><span class="line"></span><br><span class="line">解决方案：</span><br><span class="line">1. 互斥锁：只允许一个线程重建缓存，其他线程等待</span><br><span class="line">2. 热点 key 永不过期：后台异步更新</span><br><span class="line">3. 逻辑过期：缓存中存过期时间，过期后由一个线程去更新</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-7-3-缓存雪崩"><a href="#12-7-3-缓存雪崩" class="headerlink" title="12.7.3 缓存雪崩"></a>12.7.3 缓存雪崩</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">大量 key 同时过期，或 Redis 宕机，大量请求打到数据库</span><br><span class="line"></span><br><span class="line">解决方案：</span><br><span class="line">1. 过期时间加随机值：避免同时过期</span><br><span class="line">2. 多级缓存：L1 本地缓存（Caffeine） + L2 Redis</span><br><span class="line">3. 熔断降级：数据库压力大时返回默认值</span><br><span class="line">4. Redis 高可用：哨兵 / Cluster</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>本质</th>
+<th>核心方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>穿透</td>
+<td>查询不存在的数据</td>
+<td>布隆过滤器 + 缓存空值</td>
+</tr>
+<tr>
+<td>击穿</td>
+<td>热点 key 过期</td>
+<td>互斥锁 + 永不过期</td>
+</tr>
+<tr>
+<td>雪崩</td>
+<td>大量 key 同时失效</td>
+<td>过期加随机值 + 多级缓存</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="12-8-延迟队列与-Stream"><a href="#12-8-延迟队列与-Stream" class="headerlink" title="12.8 延迟队列与 Stream"></a>12.8 延迟队列与 Stream</h2><h3 id="12-8-1-延迟队列实现"><a href="#12-8-1-延迟队列实现" class="headerlink" title="12.8.1 延迟队列实现"></a>12.8.1 延迟队列实现</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 方案1：ZSET 实现延迟队列</span></span><br><span class="line">ZADD delay_queue &lt;timestamp&gt; &lt;message&gt;</span><br><span class="line"><span class="comment"># 消费者轮询</span></span><br><span class="line">ZRANGEBYSCORE delay_queue 0 &lt;current_timestamp&gt; LIMIT 0 10</span><br><span class="line">ZREM delay_queue &lt;message&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 方案2：Redis 5.0+ Stream（推荐）</span></span><br><span class="line">XADD mystream * field1 value1</span><br><span class="line">XREAD COUNT 10 BLOCK 5000 STREAMS mystream 0</span><br><span class="line"></span><br><span class="line"><span class="comment"># 消费者组</span></span><br><span class="line">XGROUP CREATE mystream mygroup 0</span><br><span class="line">XREADGROUP GROUP mygroup consumer1 COUNT 1 BLOCK 5000 STREAMS mystream &gt;</span><br><span class="line">XACK mystream mygroup &lt;message_id&gt;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="12-9-Lua-脚本与事务"><a href="#12-9-Lua-脚本与事务" class="headerlink" title="12.9 Lua 脚本与事务"></a>12.9 Lua 脚本与事务</h2><h3 id="12-9-1-Redis-事务"><a href="#12-9-1-Redis-事务" class="headerlink" title="12.9.1 Redis 事务"></a>12.9.1 Redis 事务</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MULTI</span><br><span class="line">SET key1 value1</span><br><span class="line">SET key2 value2</span><br><span class="line">EXEC</span><br><span class="line"><span class="comment"># 事务不支持回滚！EXEC 后某条命令失败，其他命令仍会执行</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="12-9-2-Lua-脚本（推荐）"><a href="#12-9-2-Lua-脚本（推荐）" class="headerlink" title="12.9.2 Lua 脚本（推荐）"></a>12.9.2 Lua 脚本（推荐）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 原子执行多条命令</span></span><br><span class="line">EVAL <span class="string">&quot;redis.call(&#x27;set&#x27;, KEYS[1], ARGV[1]) redis.call(&#x27;expire&#x27;, KEYS[1], ARGV[2])&quot;</span> 1 mykey myvalue 30</span><br><span class="line"></span><br><span class="line"><span class="comment"># 优势：</span></span><br><span class="line"><span class="comment"># 1. 原子性：Lua 脚本作为一个整体执行</span></span><br><span class="line"><span class="comment"># 2. 减少网络开销：多条命令一次发送</span></span><br><span class="line"><span class="comment"># 3. 可复用：SCRIPT LOAD 缓存脚本</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="面试精选"><a href="#面试精选" class="headerlink" title="面试精选"></a>面试精选</h2><h3 id="1-Redis-有哪些数据类型？底层数据结构是什么？"><a href="#1-Redis-有哪些数据类型？底层数据结构是什么？" class="headerlink" title="1. Redis 有哪些数据类型？底层数据结构是什么？"></a>1. Redis 有哪些数据类型？底层数据结构是什么？</h3><p>五种基本类型：String（SDS）、Hash（ziplist&#x2F;hashtable）、List（quicklist）、Set（intset&#x2F;hashtable）、ZSet（ziplist&#x2F;skiplist+hashtable）。核心数据结构：SDS（动态字符串）、Dict（哈希表）、SkipList（跳表）、QuickList（快速列表）、IntSet（整数集合）。当元素较少时使用压缩结构（ziplist&#x2F;intset）节省内存。</p>
+<h3 id="2-Redis-为什么用跳表不用红黑树实现-ZSet？"><a href="#2-Redis-为什么用跳表不用红黑树实现-ZSet？" class="headerlink" title="2. Redis 为什么用跳表不用红黑树实现 ZSet？"></a>2. Redis 为什么用跳表不用红黑树实现 ZSet？</h3><p>1）跳表实现更简单，代码更易维护；2）范围查询更高效，跳表叶子节点链表直接遍历；3）并发友好，加锁粒度更细；4）内存占用可灵活调整。红黑树虽然查找也是 O(log n)，但范围查询需要中序遍历，不如跳表方便。</p>
+<h3 id="3-RDB-和-AOF-的区别？怎么选？"><a href="#3-RDB-和-AOF-的区别？怎么选？" class="headerlink" title="3. RDB 和 AOF 的区别？怎么选？"></a>3. RDB 和 AOF 的区别？怎么选？</h3><p>RDB：全量快照，恢复快，文件小，但可能丢数据。AOF：记录每条命令，最多丢 1 秒（everysec），文件大，恢复慢。推荐混合持久化（Redis 4.0+）：AOF 重写时前半部分用 RDB 格式，后半部分用 AOF 格式，兼顾恢复速度和数据安全。</p>
+<h3 id="4-Redis-的持久化流程是怎样的？"><a href="#4-Redis-的持久化流程是怎样的？" class="headerlink" title="4. Redis 的持久化流程是怎样的？"></a>4. Redis 的持久化流程是怎样的？</h3><p>RDB：bgsave fork 子进程，利用 COW 机制生成快照，不阻塞主进程。AOF：写命令先追加到 AOF 缓冲区，根据策略（always&#x2F;everysec&#x2F;no）fsync 到磁盘。AOF 重写时 fork 子进程，期间新命令同时写入 AOF 缓冲区和重写缓冲区，重写完成后替换旧 AOF 文件。</p>
+<h3 id="5-缓存穿透、击穿、雪崩的区别和解决方案？"><a href="#5-缓存穿透、击穿、雪崩的区别和解决方案？" class="headerlink" title="5. 缓存穿透、击穿、雪崩的区别和解决方案？"></a>5. 缓存穿透、击穿、雪崩的区别和解决方案？</h3><p>穿透：查询不存在的数据，每次打到数据库。方案：布隆过滤器 + 缓存空值。击穿：热点 key 过期瞬间大量请求打到数据库。方案：互斥锁重建缓存 + 热点 key 永不过期。雪崩：大量 key 同时过期或 Redis 宕机。方案：过期时间加随机值 + 多级缓存 + 熔断降级。</p>
+<h3 id="6-Redis-分布式锁怎么实现？有什么问题？"><a href="#6-Redis-分布式锁怎么实现？有什么问题？" class="headerlink" title="6. Redis 分布式锁怎么实现？有什么问题？"></a>6. Redis 分布式锁怎么实现？有什么问题？</h3><p>基本实现：SET key value NX EX 30（原子操作），释放时用 Lua 脚本比较 value 再删除。Redisson：看门狗机制自动续期（默认 30 秒，每 10 秒续一次），业务完成后手动释放。问题：主从模式下主节点宕机可能导致锁丢失（可用 RedLock 缓解，但有争议）。</p>
+<h3 id="7-Redis-单线程为什么还这么快？"><a href="#7-Redis-单线程为什么还这么快？" class="headerlink" title="7. Redis 单线程为什么还这么快？"></a>7. Redis 单线程为什么还这么快？</h3><p>1）纯内存操作，无磁盘 IO；2）IO 多路复用（epoll），单线程处理大量连接；3）单线程避免上下文切换和锁竞争；4）高效数据结构（SDS、跳表、哈希表）。Redis 6.0 引入多线程 IO 处理网络收发，但命令执行仍单线程。</p>
+<h3 id="8-Redis-Cluster-的原理？"><a href="#8-Redis-Cluster-的原理？" class="headerlink" title="8. Redis Cluster 的原理？"></a>8. Redis Cluster 的原理？</h3><p>数据分片：16384 个槽，每个节点负责一部分，CRC16(key) % 16384 定位槽。去中心化：任意节点接收请求，不在本节点则 MOVED 重定向。节点间通过 Gossip 协议交换状态。扩缩容通过迁移槽实现。每个主节点可以有从节点做故障转移。</p>
+<h3 id="9-Redis-和-Memcached-的区别？"><a href="#9-Redis-和-Memcached-的区别？" class="headerlink" title="9. Redis 和 Memcached 的区别？"></a>9. Redis 和 Memcached 的区别？</h3><p>1）Redis 支持多种数据结构（String&#x2F;List&#x2F;Hash&#x2F;Set&#x2F;ZSet），Memcached 只支持 String；2）Redis 支持持久化（RDB&#x2F;AOF），Memcached 不支持；3）Redis 支持集群和哨兵，Memcached 需要客户端分片；4）Redis 单线程（6.0 多线程 IO），Memcached 多线程；5）Redis 支持 Lua 脚本和事务。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag"># 面试</a>
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/%E7%BC%93%E5%AD%98/" rel="tag"># 缓存</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag"># 分布式锁</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/06/16/%E7%AC%AC%E5%8D%81%E4%B8%80%E7%AB%A0%EF%BC%9AMySQL%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="prev" title="MySQL 数据库深度解析：索引、事务与锁机制">
+                  <i class="fa fa-angle-left"></i> MySQL 数据库深度解析：索引、事务与锁机制
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2025 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">zorpan</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
