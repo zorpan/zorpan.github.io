@@ -14,12 +14,6 @@ categories:
 
 <!-- more -->
 
-# 第十三章：Spring Framework
-
-> Spring 是 Java 企业级开发的事实标准框架，理解 IoC、AOP 和 Bean 生命周期的原理是中高级 Java 工程师的必备技能。Spring 源码相关问题在面试中出现频率极高。
-
----
-
 ## 13.1 Spring IoC 容器与 Bean 生命周期
 
 ### 13.1.1 IoC 核心思想
@@ -133,7 +127,7 @@ public class UserService {
 | 特性 | @Autowired | @Resource |
 |------|-----------|----------|
 | 来源 | Spring | JSR-250（JDK） |
-| 注入方式 | 按类型 | 按名称 |
+| 注入方式 | 按类型 | 先按名称，找不到再按类型 |
 | 指定名称 | @Qualifier | name 属性 |
 | 推荐 | Spring 生态内 | 需要按名称注入时 |
 
@@ -189,14 +183,18 @@ public class LogAspect {
 }
 ```
 
+**通知执行顺序：**
+- 正常执行：@Around 前半段 → @Before → 目标方法 → @AfterReturning → @After → @Around 后半段
+- 异常执行：@Around 前半段 → @Before → 目标方法(异常) → @AfterThrowing → @After → @Around 后半段
+
 ### 13.3.3 AOP 代理创建时机
 
 ```
 BeanPostProcessor.postProcessAfterInitialization()
     └── AbstractAutoProxyCreator.wrapIfNecessary()
         ├── 判断是否需要代理（匹配切点）
-        ├── 有接口 → JDK 动态代理
-        └── 无接口 → CGLIB 代理
+        ├── 默认使用 CGLIB 代理（Spring Boot 2.x+）
+        └── 仅在 proxyTargetClass=false 时使用 JDK 动态代理（需有接口）
 ```
 
 ---
