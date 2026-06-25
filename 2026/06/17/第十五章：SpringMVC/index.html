@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"zorpan.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"mac"},"fold":{"enable":false,"height":500},"language":false,"highlight_theme":"night eighties"},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring MVC 深度解析：请求处理流程与拦截器">
+<meta property="og:url" content="https://zorpan.github.io/2026/06/17/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9ASpringMVC/index.html">
+<meta property="og:site_name" content="Java 进阶之路">
+<meta property="og:description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-17T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-25T15:26:49.499Z">
+<meta property="article:author" content="zorpan">
+<meta property="article:tag" content="DispatcherServlet">
+<meta property="article:tag" content="Spring MVC">
+<meta property="article:tag" content="拦截器">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://zorpan.github.io/2026/06/17/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9ASpringMVC/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://zorpan.github.io/2026/06/17/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9ASpringMVC/","path":"2026/06/17/第十五章：SpringMVC/","title":"Spring MVC 深度解析：请求处理流程与拦截器"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Spring MVC 深度解析：请求处理流程与拦截器 | Java 进阶之路</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Java 进阶之路</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">深入浅出，从入门到架构师</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#15-1-%E8%AF%B7%E6%B1%82%E5%A4%84%E7%90%86%E5%85%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">15.1 请求处理全流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#15-2-HandlerMapping-%E4%B8%8E-HandlerAdapter"><span class="nav-number">2.</span> <span class="nav-text">15.2 HandlerMapping 与 HandlerAdapter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#15-3-%E5%8F%82%E6%95%B0%E8%A7%A3%E6%9E%90%E5%99%A8"><span class="nav-number">3.</span> <span class="nav-text">15.3 参数解析器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#15-4-%E6%8B%A6%E6%88%AA%E5%99%A8-vs-%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="nav-number">4.</span> <span class="nav-text">15.4 拦截器 vs 过滤器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#15-5-%E5%85%A8%E5%B1%80%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%EF%BC%88-ControllerAdvice%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">15.5 全局异常处理（@ControllerAdvice）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89"><span class="nav-number">6.</span> <span class="nav-text">面试精选</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Spring-MVC-%E7%9A%84%E8%AF%B7%E6%B1%82%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B%EF%BC%9F"><span class="nav-number">6.1.</span> <span class="nav-text">1. Spring MVC 的请求处理流程？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8B%A6%E6%88%AA%E5%99%A8%E5%92%8C%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">6.2.</span> <span class="nav-text">2. 拦截器和过滤器的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-ControllerAdvice-%E7%9A%84%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">6.3.</span> <span class="nav-text">3. @ControllerAdvice 的作用？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-RequestBody-%E7%9A%84%E5%8E%9F%E7%90%86%EF%BC%9F"><span class="nav-number">6.4.</span> <span class="nav-text">4. @RequestBody 的原理？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-DispatcherServlet-%E7%9A%84%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">6.5.</span> <span class="nav-text">5. DispatcherServlet 的作用？</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zorpan"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zorpan</p>
+  <div class="site-description" itemprop="description">Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">78</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zorpan" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zorpan" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://zorpan.github.io/2026/06/17/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9ASpringMVC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zorpan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Java 进阶之路">
+      <meta itemprop="description" content="Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Spring MVC 深度解析：请求处理流程与拦截器 | Java 进阶之路">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Spring MVC 深度解析：请求处理流程与拦截器
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-17 14:00:00" itemprop="dateCreated datePublished" datetime="2026-06-17T14:00:00+08:00">2026-06-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-06-25 23:26:49" itemprop="dateModified" datetime="2026-06-25T23:26:49+08:00">2026-06-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java-%E8%BF%9B%E9%98%B6%E4%B9%8B%E8%B7%AF/" itemprop="url" rel="index"><span itemprop="name">Java 进阶之路</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="15-1-请求处理全流程"><a href="#15-1-请求处理全流程" class="headerlink" title="15.1 请求处理全流程"></a>15.1 请求处理全流程</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">客户端请求</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">Tomcat 接收请求</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">DispatcherServlet.doDispatch()  ← 核心入口</span><br><span class="line">    │</span><br><span class="line">    ├── 1. getHandler() → 根据 URL 找到 Handler（Controller 方法）</span><br><span class="line">    │      └── HandlerMapping（RequestMappingHandlerMapping）</span><br><span class="line">    │          遍历所有 @RequestMapping 注解，匹配 URL 和 HTTP 方法</span><br><span class="line">    │</span><br><span class="line">    ├── 2. getHandlerAdapter() → 找到能执行该 Handler 的适配器</span><br><span class="line">    │      └── HandlerAdapter（RequestMappingHandlerAdapter）</span><br><span class="line">    │</span><br><span class="line">    ├── 3. 执行拦截器 preHandle()</span><br><span class="line">    │</span><br><span class="line">    ├── 4. ha.handle() → 执行 Handler（Controller 方法）</span><br><span class="line">    │      ├── 参数解析（HandlerMethodArgumentResolver）</span><br><span class="line">    │      │   ├── @RequestParam → RequestParamMethodArgumentResolver</span><br><span class="line">    │      │   ├── @RequestBody → RequestResponseBodyMethodProcessor</span><br><span class="line">    │      │   ├── @PathVariable → PathVariableMethodArgumentResolver</span><br><span class="line">    │      │   └── 自定义参数解析器</span><br><span class="line">    │      └── 返回值处理（HandlerMethodReturnValueHandler）</span><br><span class="line">    │          ├── @ResponseBody → RequestResponseBodyMethodProcessor → JSON 序列化</span><br><span class="line">    │          └── 返回 ModelAndView → 视图解析</span><br><span class="line">    │</span><br><span class="line">    ├── 5. 执行拦截器 postHandle()（注：Handler 抛异常时不会执行，直接进入 afterCompletion）</span><br><span class="line">    │</span><br><span class="line">    └── 6. 执行拦截器 afterCompletion()（无论是否异常，所有 preHandle 返回 true 的拦截器都会执行）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="15-2-HandlerMapping-与-HandlerAdapter"><a href="#15-2-HandlerMapping-与-HandlerAdapter" class="headerlink" title="15.2 HandlerMapping 与 HandlerAdapter"></a>15.2 HandlerMapping 与 HandlerAdapter</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// HandlerMapping：URL → Handler 的映射</span></span><br><span class="line"><span class="comment">// RequestMappingHandlerMapping：处理 @RequestMapping 注解</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// HandlerAdapter：执行 Handler 的适配器</span></span><br><span class="line"><span class="comment">// RequestMappingHandlerAdapter：执行 @RequestMapping 标注的方法</span></span><br><span class="line"><span class="comment">// HttpRequestHandlerAdapter：执行 HttpRequestHandler</span></span><br><span class="line"><span class="comment">// SimpleControllerHandlerAdapter：执行 Controller 接口</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 设计模式：适配器模式</span></span><br><span class="line"><span class="comment">// DispatcherServlet 不直接调用各种 Handler，通过适配器统一接口</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="15-3-参数解析器"><a href="#15-3-参数解析器" class="headerlink" title="15.3 参数解析器"></a>15.3 参数解析器</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// @RequestParam：查询参数</span></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/user&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">getUser</span><span class="params">(<span class="meta">@RequestParam</span> String name,</span></span><br><span class="line"><span class="params">                        <span class="meta">@RequestParam(defaultValue = &quot;1&quot;)</span> <span class="type">int</span> page)</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// @PathVariable：路径参数</span></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/user/&#123;id&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">getUser</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// @RequestBody：请求体（JSON → 对象）</span></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/user&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">createUser</span><span class="params">(<span class="meta">@RequestBody</span> <span class="meta">@Valid</span> UserDTO user)</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// @RequestHeader：请求头</span></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/info&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">info</span><span class="params">(<span class="meta">@RequestHeader(&quot;Authorization&quot;)</span> String token)</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// @ModelAttribute：表单参数（默认，不需要注解）</span></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/form&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">form</span><span class="params">(UserDTO user)</span> &#123; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="15-4-拦截器-vs-过滤器"><a href="#15-4-拦截器-vs-过滤器" class="headerlink" title="15.4 拦截器 vs 过滤器"></a>15.4 拦截器 vs 过滤器</h2><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>过滤器（Filter）</th>
+<th>拦截器（Interceptor）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>规范</td>
+<td>Servlet 规范</td>
+<td>Spring MVC 框架</td>
+</tr>
+<tr>
+<td>作用范围</td>
+<td>所有请求（包括静态资源）</td>
+<td>只拦截 Controller 请求</td>
+</tr>
+<tr>
+<td>执行时机</td>
+<td>DispatcherServlet 之前</td>
+<td>DispatcherServlet 之内</td>
+</tr>
+<tr>
+<td>获取 Bean</td>
+<td>不能直接获取</td>
+<td>可以注入 Spring Bean</td>
+</tr>
+<tr>
+<td>执行顺序</td>
+<td>Filter → Interceptor → Controller → Interceptor → Filter</td>
+<td></td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 拦截器实现</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AuthInterceptor</span> <span class="keyword">implements</span> <span class="title class_">HandlerInterceptor</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">preHandle</span><span class="params">(HttpServletRequest request,</span></span><br><span class="line"><span class="params">                             HttpServletResponse response,</span></span><br><span class="line"><span class="params">                             Object handler)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">token</span> <span class="operator">=</span> request.getHeader(<span class="string">&quot;Authorization&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (token == <span class="literal">null</span> || !tokenService.validate(token)) &#123;</span><br><span class="line">            response.setStatus(<span class="number">401</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// 返回 false 中断请求</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;  <span class="comment">// 返回 true 继续执行</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">postHandle</span><span class="params">(HttpServletRequest request,</span></span><br><span class="line"><span class="params">                           HttpServletResponse response,</span></span><br><span class="line"><span class="params">                           Object handler,</span></span><br><span class="line"><span class="params">                           ModelAndView modelAndView)</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">afterCompletion</span><span class="params">(HttpServletRequest request,</span></span><br><span class="line"><span class="params">                                HttpServletResponse response,</span></span><br><span class="line"><span class="params">                                Object handler,</span></span><br><span class="line"><span class="params">                                Exception ex)</span> &#123; &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册拦截器</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebConfig</span> <span class="keyword">implements</span> <span class="title class_">WebMvcConfigurer</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addInterceptors</span><span class="params">(InterceptorRegistry registry)</span> &#123;</span><br><span class="line">        registry.addInterceptor(<span class="keyword">new</span> <span class="title class_">AuthInterceptor</span>())</span><br><span class="line">                .addPathPatterns(<span class="string">&quot;/api/**&quot;</span>)</span><br><span class="line">                .excludePathPatterns(<span class="string">&quot;/api/login&quot;</span>, <span class="string">&quot;/api/register&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="15-5-全局异常处理（-ControllerAdvice）"><a href="#15-5-全局异常处理（-ControllerAdvice）" class="headerlink" title="15.5 全局异常处理（@ControllerAdvice）"></a>15.5 全局异常处理（@ControllerAdvice）</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestControllerAdvice</span>  <span class="comment">// = @ControllerAdvice + @ResponseBody</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GlobalExceptionHandler</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 业务异常</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(BizException.class)</span></span><br><span class="line">    <span class="keyword">public</span> Result&lt;?&gt; handleBizException(BizException e) &#123;</span><br><span class="line">        log.warn(<span class="string">&quot;业务异常: &#123;&#125;&quot;</span>, e.getMessage());</span><br><span class="line">        <span class="keyword">return</span> Result.fail(e.getCode(), e.getMessage());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 参数校验异常</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(MethodArgumentNotValidException.class)</span></span><br><span class="line">    <span class="keyword">public</span> Result&lt;?&gt; handleValidation(MethodArgumentNotValidException e) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">message</span> <span class="operator">=</span> e.getBindingResult().getFieldErrors().stream()</span><br><span class="line">            .map(f -&gt; f.getField() + <span class="string">&quot;: &quot;</span> + f.getDefaultMessage())</span><br><span class="line">            .collect(Collectors.joining(<span class="string">&quot;, &quot;</span>));</span><br><span class="line">        <span class="keyword">return</span> Result.fail(<span class="number">400</span>, message);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 兜底异常</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(Exception.class)</span></span><br><span class="line">    <span class="keyword">public</span> Result&lt;?&gt; handleException(Exception e) &#123;</span><br><span class="line">        log.error(<span class="string">&quot;系统异常&quot;</span>, e);</span><br><span class="line">        <span class="keyword">return</span> Result.fail(<span class="number">500</span>, <span class="string">&quot;系统内部错误&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="面试精选"><a href="#面试精选" class="headerlink" title="面试精选"></a>面试精选</h2><h3 id="1-Spring-MVC-的请求处理流程？"><a href="#1-Spring-MVC-的请求处理流程？" class="headerlink" title="1. Spring MVC 的请求处理流程？"></a>1. Spring MVC 的请求处理流程？</h3><p>客户端请求 → Tomcat → DispatcherServlet.doDispatch() → HandlerMapping 找到 Controller 方法 → HandlerAdapter 执行方法（参数解析 + 业务逻辑 + 返回值处理）→ 视图渲染或 JSON 序列化 → 响应客户端。拦截器在 Handler 执行前后介入。</p>
+<h3 id="2-拦截器和过滤器的区别？"><a href="#2-拦截器和过滤器的区别？" class="headerlink" title="2. 拦截器和过滤器的区别？"></a>2. 拦截器和过滤器的区别？</h3><p>过滤器是 Servlet 规范，在 DispatcherServlet 之前执行，作用于所有请求包括静态资源。拦截器是 Spring MVC 框架，在 DispatcherServlet 之内执行，只拦截 Controller 请求。拦截器可以注入 Spring Bean，过滤器不能。执行顺序：Filter → Interceptor → Controller → Interceptor → Filter。</p>
+<h3 id="3-ControllerAdvice-的作用？"><a href="#3-ControllerAdvice-的作用？" class="headerlink" title="3. @ControllerAdvice 的作用？"></a>3. @ControllerAdvice 的作用？</h3><p>@ControllerAdvice 是 Spring MVC 的全局异常处理、数据绑定和数据预处理的增强注解。配合 @ExceptionHandler 处理全局异常，配合 @InitBinder 自定义参数绑定，配合 @ModelAttribute 全局数据预处理。@RestControllerAdvice &#x3D; @ControllerAdvice + @ResponseBody。</p>
+<h3 id="4-RequestBody-的原理？"><a href="#4-RequestBody-的原理？" class="headerlink" title="4. @RequestBody 的原理？"></a>4. @RequestBody 的原理？</h3><p>@RequestBody 通过 RequestResponseBodyMethodProcessor 处理，使用 HttpMessageConverter（默认 Jackson 的 MappingJackson2HttpMessageConverter）将请求体的 JSON 反序列化为 Java 对象。配合 @Valid 注解可进行参数校验。</p>
+<h3 id="5-DispatcherServlet-的作用？"><a href="#5-DispatcherServlet-的作用？" class="headerlink" title="5. DispatcherServlet 的作用？"></a>5. DispatcherServlet 的作用？</h3><p>DispatcherServlet 是 Spring MVC 的前端控制器，所有请求的统一入口。核心方法 doDispatch() 负责：查找 Handler、获取 HandlerAdapter、执行拦截器、调用 Handler 处理请求、处理返回值。它本身是一个 Servlet，配置在 web.xml 或由 Spring Boot 自动配置。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag"># 面试</a>
+              <a href="/tags/Spring-MVC/" rel="tag"># Spring MVC</a>
+              <a href="/tags/DispatcherServlet/" rel="tag"># DispatcherServlet</a>
+              <a href="/tags/%E6%8B%A6%E6%88%AA%E5%99%A8/" rel="tag"># 拦截器</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/06/17/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%EF%BC%9ASpringBoot/" rel="prev" title="Spring Boot 深度解析：自动装配原理与启动流程">
+                  <i class="fa fa-angle-left"></i> Spring Boot 深度解析：自动装配原理与启动流程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/06/17/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%EF%BC%9AMyBatis/" rel="next" title="MyBatis 深度解析：执行流程、动态 SQL 与插件机制">
+                  MyBatis 深度解析：执行流程、动态 SQL 与插件机制 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2025 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">zorpan</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

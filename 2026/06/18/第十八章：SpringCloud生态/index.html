@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"zorpan.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"mac"},"fold":{"enable":false,"height":500},"language":false,"highlight_theme":"night eighties"},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Cloud 微服务治理全解析">
+<meta property="og:url" content="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E5%85%AB%E7%AB%A0%EF%BC%9ASpringCloud%E7%94%9F%E6%80%81/index.html">
+<meta property="og:site_name" content="Java 进阶之路">
+<meta property="og:description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-18T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-25T15:26:49.499Z">
+<meta property="article:author" content="zorpan">
+<meta property="article:tag" content="Nacos">
+<meta property="article:tag" content="Sentinel">
+<meta property="article:tag" content="Spring Cloud">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E5%85%AB%E7%AB%A0%EF%BC%9ASpringCloud%E7%94%9F%E6%80%81/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E5%85%AB%E7%AB%A0%EF%BC%9ASpringCloud%E7%94%9F%E6%80%81/","path":"2026/06/18/第十八章：SpringCloud生态/","title":"Spring Cloud 微服务治理全解析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Spring Cloud 微服务治理全解析 | Java 进阶之路</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Java 进阶之路</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">深入浅出，从入门到架构师</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#18-1-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%8F%91%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">18.1 服务注册与发现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#18-1-1-Nacos%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">18.1.1 Nacos（推荐）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#18-1-2-%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83%E5%AF%B9%E6%AF%94"><span class="nav-number">1.2.</span> <span class="nav-text">18.1.2 注册中心对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-2-%E6%9C%8D%E5%8A%A1%E8%B0%83%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">18.2 服务调用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#18-2-1-OpenFeign"><span class="nav-number">2.1.</span> <span class="nav-text">18.2.1 OpenFeign</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-3-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="nav-number">3.</span> <span class="nav-text">18.3 负载均衡</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#18-3-1-Spring-Cloud-LoadBalancer"><span class="nav-number">3.1.</span> <span class="nav-text">18.3.1 Spring Cloud LoadBalancer</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-4-%E6%9C%8D%E5%8A%A1%E7%86%94%E6%96%AD%E4%B8%8E%E9%99%8D%E7%BA%A7"><span class="nav-number">4.</span> <span class="nav-text">18.4 服务熔断与降级</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#18-4-1-Sentinel"><span class="nav-number">4.1.</span> <span class="nav-text">18.4.1 Sentinel</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#18-4-2-%E7%86%94%E6%96%AD%E7%AD%96%E7%95%A5"><span class="nav-number">4.2.</span> <span class="nav-text">18.4.2 熔断策略</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-5-%E7%BD%91%E5%85%B3%EF%BC%88Spring-Cloud-Gateway%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">18.5 网关（Spring Cloud Gateway）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-6-%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83%EF%BC%88Nacos-Config%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">18.6 配置中心（Nacos Config）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-7-%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA"><span class="nav-number">7.</span> <span class="nav-text">18.7 链路追踪</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-8-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%EF%BC%88Seata%EF%BC%89"><span class="nav-number">8.</span> <span class="nav-text">18.8 分布式事务（Seata）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#18-8-1-Seata-%E4%B8%89%E7%A7%8D%E6%A8%A1%E5%BC%8F"><span class="nav-number">8.1.</span> <span class="nav-text">18.8.1 Seata 三种模式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89"><span class="nav-number">9.</span> <span class="nav-text">面试精选</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Nacos-%E5%92%8C-Eureka-%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">9.1.</span> <span class="nav-text">1. Nacos 和 Eureka 的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-OpenFeign-%E7%9A%84%E5%8E%9F%E7%90%86%EF%BC%9F"><span class="nav-number">9.2.</span> <span class="nav-text">2. OpenFeign 的原理？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Sentinel-%E5%92%8C-Hystrix-%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">9.3.</span> <span class="nav-text">3. Sentinel 和 Hystrix 的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-Spring-Cloud-Gateway-%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%EF%BC%9F"><span class="nav-number">9.4.</span> <span class="nav-text">4. Spring Cloud Gateway 的工作原理？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-Seata-AT-%E6%A8%A1%E5%BC%8F%E7%9A%84%E5%8E%9F%E7%90%86%EF%BC%9F"><span class="nav-number">9.5.</span> <span class="nav-text">5. Seata AT 模式的原理？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E6%80%8E%E4%B9%88%E9%80%89%E6%8B%A9%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E6%96%B9%E6%A1%88%EF%BC%9F"><span class="nav-number">9.6.</span> <span class="nav-text">6. 怎么选择分布式事务方案？</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zorpan"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zorpan</p>
+  <div class="site-description" itemprop="description">Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">78</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zorpan" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zorpan" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E5%85%AB%E7%AB%A0%EF%BC%9ASpringCloud%E7%94%9F%E6%80%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zorpan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Java 进阶之路">
+      <meta itemprop="description" content="Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Spring Cloud 微服务治理全解析 | Java 进阶之路">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Spring Cloud 微服务治理全解析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-18 12:00:00" itemprop="dateCreated datePublished" datetime="2026-06-18T12:00:00+08:00">2026-06-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-06-25 23:26:49" itemprop="dateModified" datetime="2026-06-25T23:26:49+08:00">2026-06-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java-%E8%BF%9B%E9%98%B6%E4%B9%8B%E8%B7%AF/" itemprop="url" rel="index"><span itemprop="name">Java 进阶之路</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="18-1-服务注册与发现"><a href="#18-1-服务注册与发现" class="headerlink" title="18.1 服务注册与发现"></a>18.1 服务注册与发现</h2><h3 id="18-1-1-Nacos（推荐）"><a href="#18-1-1-Nacos（推荐）" class="headerlink" title="18.1.1 Nacos（推荐）"></a>18.1.1 Nacos（推荐）</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># application.yml</span></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">nacos:</span></span><br><span class="line">      <span class="attr">discovery:</span></span><br><span class="line">        <span class="attr">server-addr:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:8848</span></span><br><span class="line">        <span class="attr">namespace:</span> <span class="string">dev</span></span><br><span class="line">        <span class="attr">group:</span> <span class="string">DEFAULT_GROUP</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 服务提供者</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserController</span> &#123;</span><br><span class="line">    <span class="meta">@GetMapping(&quot;/user/&#123;id&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">getUser</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span> &#123; <span class="keyword">return</span> userService.findById(id); &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 服务消费者（OpenFeign）</span></span><br><span class="line"><span class="meta">@FeignClient(name = &quot;user-service&quot;, fallbackFactory = UserClientFallback.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">UserClient</span> &#123;</span><br><span class="line">    <span class="meta">@GetMapping(&quot;/user/&#123;id&#125;&quot;)</span></span><br><span class="line">    User <span class="title function_">getUser</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Nacos 核心功能：</strong></p>
+<ul>
+<li>服务注册与发现：AP&#x2F;CP 模式可切换</li>
+<li>配置管理：动态配置推送</li>
+<li>命名空间：环境隔离（dev&#x2F;test&#x2F;prod）</li>
+</ul>
+<h3 id="18-1-2-注册中心对比"><a href="#18-1-2-注册中心对比" class="headerlink" title="18.1.2 注册中心对比"></a>18.1.2 注册中心对比</h3><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>Nacos</th>
+<th>Eureka</th>
+<th>Consul</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CAP</td>
+<td>AP&#x2F;CP</td>
+<td>AP</td>
+<td>CP</td>
+</tr>
+<tr>
+<td>健康检查</td>
+<td>TCP&#x2F;HTTP&#x2F;MySQL</td>
+<td>心跳</td>
+<td>TCP&#x2F;HTTP&#x2F;gRPC</td>
+</tr>
+<tr>
+<td>配置管理</td>
+<td>支持</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>雪崩保护</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="18-2-服务调用"><a href="#18-2-服务调用" class="headerlink" title="18.2 服务调用"></a>18.2 服务调用</h2><h3 id="18-2-1-OpenFeign"><a href="#18-2-1-OpenFeign" class="headerlink" title="18.2.1 OpenFeign"></a>18.2.1 OpenFeign</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FeignClient(</span></span><br><span class="line"><span class="meta">    name = &quot;order-service&quot;,</span></span><br><span class="line"><span class="meta">    url = &quot;$&#123;order.service.url&#125;&quot;,      // 可选：指定 URL</span></span><br><span class="line"><span class="meta">    fallbackFactory = OrderClientFallback.class  // 降级</span></span><br><span class="line"><span class="meta">)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">OrderClient</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/order&quot;)</span></span><br><span class="line">    Order <span class="title function_">createOrder</span><span class="params">(<span class="meta">@RequestBody</span> OrderDTO order)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/order/&#123;id&#125;&quot;)</span></span><br><span class="line">    Order <span class="title function_">getOrder</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 降级处理</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderClientFallback</span> <span class="keyword">implements</span> <span class="title class_">FallbackFactory</span>&lt;OrderClient&gt; &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> OrderClient <span class="title function_">create</span><span class="params">(Throwable cause)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">OrderClient</span>() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> Order <span class="title function_">createOrder</span><span class="params">(OrderDTO order)</span> &#123;</span><br><span class="line">                log.error(<span class="string">&quot;创建订单失败&quot;</span>, cause);</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BizException</span>(<span class="string">&quot;订单服务不可用&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> Order <span class="title function_">getOrder</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> Order.builder().id(id).status(<span class="string">&quot;UNKNOWN&quot;</span>).build();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="18-3-负载均衡"><a href="#18-3-负载均衡" class="headerlink" title="18.3 负载均衡"></a>18.3 负载均衡</h2><h3 id="18-3-1-Spring-Cloud-LoadBalancer"><a href="#18-3-1-Spring-Cloud-LoadBalancer" class="headerlink" title="18.3.1 Spring Cloud LoadBalancer"></a>18.3.1 Spring Cloud LoadBalancer</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 配置负载均衡策略</span></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">loadbalancer:</span></span><br><span class="line">      <span class="attr">ribbon:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">false</span>  <span class="comment"># 禁用 Ribbon，使用 Spring Cloud LoadBalancer</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>负载均衡策略：</strong></p>
+<ul>
+<li><strong>Round Robin</strong>（轮询，默认）</li>
+<li><strong>Random</strong>（随机）</li>
+<li><strong>Weighted</strong>（加权）</li>
+</ul>
+<hr>
+<h2 id="18-4-服务熔断与降级"><a href="#18-4-服务熔断与降级" class="headerlink" title="18.4 服务熔断与降级"></a>18.4 服务熔断与降级</h2><h3 id="18-4-1-Sentinel"><a href="#18-4-1-Sentinel" class="headerlink" title="18.4.1 Sentinel"></a>18.4.1 Sentinel</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 资源定义</span></span><br><span class="line"><span class="meta">@SentinelResource(</span></span><br><span class="line"><span class="meta">    value = &quot;getUser&quot;,</span></span><br><span class="line"><span class="meta">    blockHandler = &quot;handleBlock&quot;,     // 限流/系统保护触发时处理（BlockException）</span></span><br><span class="line"><span class="meta">    fallback = &quot;handleFallback&quot;       // 业务异常和熔断降级处理</span></span><br><span class="line"><span class="meta">)</span></span><br><span class="line"><span class="keyword">public</span> User <span class="title function_">getUser</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> userClient.getUser(id);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> User <span class="title function_">handleBlock</span><span class="params">(Long id, BlockException ex)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> User.builder().id(id).name(<span class="string">&quot;限流降级&quot;</span>).build();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> User <span class="title function_">handleFallback</span><span class="params">(Long id, Throwable ex)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> User.builder().id(id).name(<span class="string">&quot;异常降级&quot;</span>).build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Sentinel 核心概念：</strong></p>
+<ul>
+<li><strong>资源</strong>：被保护的对象（方法、接口）</li>
+<li><strong>规则</strong>：限流规则、熔断规则、热点规则</li>
+<li><strong>流控效果</strong>：快速失败、Warm Up（预热）、排队等待</li>
+</ul>
+<h3 id="18-4-2-熔断策略"><a href="#18-4-2-熔断策略" class="headerlink" title="18.4.2 熔断策略"></a>18.4.2 熔断策略</h3><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>触发条件</th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>慢调用比例</td>
+<td>响应时间超阈值的比例</td>
+<td>接口变慢</td>
+</tr>
+<tr>
+<td>异常比例</td>
+<td>异常请求的比例</td>
+<td>频繁报错</td>
+</tr>
+<tr>
+<td>异常数</td>
+<td>异常请求的数量</td>
+<td>固定阈值</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="18-5-网关（Spring-Cloud-Gateway）"><a href="#18-5-网关（Spring-Cloud-Gateway）" class="headerlink" title="18.5 网关（Spring Cloud Gateway）"></a>18.5 网关（Spring Cloud Gateway）</h2><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">user-service</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">lb://user-service</span>          <span class="comment"># 负载均衡</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/api/user/**</span>           <span class="comment"># 路径匹配</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Method=GET,POST</span>             <span class="comment"># 方法匹配</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">StripPrefix=1</span>               <span class="comment"># 去掉前缀</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">RequestRateLimiter</span>     <span class="comment"># 限流</span></span><br><span class="line">              <span class="attr">args:</span></span><br><span class="line">                <span class="attr">redis-rate-limiter.replenishRate:</span> <span class="number">10</span></span><br><span class="line">                <span class="attr">redis-rate-limiter.burstCapacity:</span> <span class="number">20</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Gateway 核心概念：</strong></p>
+<ul>
+<li><strong>Route（路由）</strong>：一组匹配规则和目标 URI</li>
+<li><strong>Predicate（断言）</strong>：匹配条件（Path、Method、Header 等）</li>
+<li><strong>Filter（过滤器）</strong>：请求&#x2F;响应处理（限流、鉴权、日志）</li>
+</ul>
+<hr>
+<h2 id="18-6-配置中心（Nacos-Config）"><a href="#18-6-配置中心（Nacos-Config）" class="headerlink" title="18.6 配置中心（Nacos Config）"></a>18.6 配置中心（Nacos Config）</h2><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">nacos:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="attr">server-addr:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:8848</span></span><br><span class="line">        <span class="attr">file-extension:</span> <span class="string">yaml</span></span><br><span class="line">        <span class="attr">group:</span> <span class="string">DEFAULT_GROUP</span></span><br><span class="line">        <span class="attr">namespace:</span> <span class="string">dev</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 动态刷新配置</span></span><br><span class="line"><span class="meta">@RefreshScope</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConfigController</span> &#123;</span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;custom.config.value&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String configValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="18-7-链路追踪"><a href="#18-7-链路追踪" class="headerlink" title="18.7 链路追踪"></a>18.7 链路追踪</h2><p><strong>SkyWalking 架构：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">应用（Agent）→ OAP Server（数据收集和分析）→ UI（可视化展示）</span><br></pre></td></tr></table></figure>
+
+<p><strong>核心概念：</strong></p>
+<ul>
+<li><strong>Trace</strong>：一次完整请求的链路</li>
+<li><strong>Span</strong>：链路中的一个操作（如一次 RPC 调用）</li>
+<li><strong>Segment</strong>：一个服务内的 Span 集合</li>
+</ul>
+<hr>
+<h2 id="18-8-分布式事务（Seata）"><a href="#18-8-分布式事务（Seata）" class="headerlink" title="18.8 分布式事务（Seata）"></a>18.8 分布式事务（Seata）</h2><h3 id="18-8-1-Seata-三种模式"><a href="#18-8-1-Seata-三种模式" class="headerlink" title="18.8.1 Seata 三种模式"></a>18.8.1 Seata 三种模式</h3><p><strong>AT 模式（推荐）：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">1. TM 开启全局事务 → TC 注册全局事务</span><br><span class="line">2. RM 执行本地事务 → TC 注册分支事务</span><br><span class="line">   ├── 一阶段：执行 SQL + 记录 undo_log（before/after image）</span><br><span class="line">   └── 二阶段提交：异步清理 undo_log</span><br><span class="line">   └── 二阶段回滚：根据 undo_log 反向补偿</span><br><span class="line"></span><br><span class="line">优点：对业务无侵入，自动回滚</span><br><span class="line">缺点：需要 undo_log 表，性能有一定影响</span><br></pre></td></tr></table></figure>
+
+<p><strong>TCC 模式：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Try：预留资源（如冻结库存）</span><br><span class="line">Confirm：确认提交（如扣减冻结库存）</span><br><span class="line">Cancel：回滚释放（如解冻库存）</span><br><span class="line"></span><br><span class="line">优点：不依赖数据库锁，性能好</span><br><span class="line">缺点：业务侵入大，需要手写三个接口</span><br></pre></td></tr></table></figure>
+
+<p><strong>Saga 模式：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">正向操作：T1 → T2 → T3</span><br><span class="line">补偿回滚：C3 → C2 → C1</span><br><span class="line"></span><br><span class="line">优点：适合长事务</span><br><span class="line">缺点：补偿逻辑复杂</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="面试精选"><a href="#面试精选" class="headerlink" title="面试精选"></a>面试精选</h2><h3 id="1-Nacos-和-Eureka-的区别？"><a href="#1-Nacos-和-Eureka-的区别？" class="headerlink" title="1. Nacos 和 Eureka 的区别？"></a>1. Nacos 和 Eureka 的区别？</h3><p>Nacos 支持 AP&#x2F;CP 切换，Eureka 只支持 AP。Nacos 支持配置管理，Eureka 不支持。Nacos 支持主动健康检查，Eureka 只有心跳。Nacos 有命名空间隔离，社区活跃度更高。</p>
+<h3 id="2-OpenFeign-的原理？"><a href="#2-OpenFeign-的原理？" class="headerlink" title="2. OpenFeign 的原理？"></a>2. OpenFeign 的原理？</h3><p>OpenFeign 基于接口 + 注解定义 HTTP 调用，运行时通过动态代理生成实现类，代理类将方法调用转为 HTTP 请求（通过 LoadBalancer 选择实例）。支持 fallback 降级、请求拦截器、日志级别配置。</p>
+<h3 id="3-Sentinel-和-Hystrix-的区别？"><a href="#3-Sentinel-和-Hystrix-的区别？" class="headerlink" title="3. Sentinel 和 Hystrix 的区别？"></a>3. Sentinel 和 Hystrix 的区别？</h3><p>Sentinel 支持流控（QPS、线程数）、熔断（慢调用、异常比例）、热点限流、系统自适应保护，有控制台可视化配置。Hystrix 只有线程池和信号量隔离。Sentinel 支持 @SentinelResource 注解和 URL 资源自动识别，更易用。</p>
+<h3 id="4-Spring-Cloud-Gateway-的工作原理？"><a href="#4-Spring-Cloud-Gateway-的工作原理？" class="headerlink" title="4. Spring Cloud Gateway 的工作原理？"></a>4. Spring Cloud Gateway 的工作原理？</h3><p>请求进入 Gateway → 路由匹配（Predicate）→ 过滤器链处理（Pre Filter → 转发请求 → Post Filter）→ 返回响应。基于 WebFlux 实现非阻塞，性能优于 Zuul 1.x。支持动态路由、限流、重试、熔断。</p>
+<h3 id="5-Seata-AT-模式的原理？"><a href="#5-Seata-AT-模式的原理？" class="headerlink" title="5. Seata AT 模式的原理？"></a>5. Seata AT 模式的原理？</h3><p>一阶段：执行业务 SQL，记录 undo_log（before image 和 after image），本地事务提交。二阶段提交：删除 undo_log。二阶段回滚：根据 undo_log 生成反向 SQL 执行补偿。对业务代码无侵入，但需要每个数据库建 undo_log 表。</p>
+<h3 id="6-怎么选择分布式事务方案？"><a href="#6-怎么选择分布式事务方案？" class="headerlink" title="6. 怎么选择分布式事务方案？"></a>6. 怎么选择分布式事务方案？</h3><p>AT 模式适合大多数场景（对业务无侵入），TCC 模式适合高性能场景（需手写 Try&#x2F;Confirm&#x2F;Cancel），Saga 模式适合长事务（如跨多个服务的复杂流程）。大多数场景优先选 AT 模式。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag"># 面试</a>
+              <a href="/tags/Spring-Cloud/" rel="tag"># Spring Cloud</a>
+              <a href="/tags/Nacos/" rel="tag"># Nacos</a>
+              <a href="/tags/Sentinel/" rel="tag"># Sentinel</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B8%83%E7%AB%A0%EF%BC%9A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%90%86%E8%AE%BA/" rel="prev" title="微服务架构理论与实践">
+                  <i class="fa fa-angle-left"></i> 微服务架构理论与实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B9%9D%E7%AB%A0%EF%BC%9A%E6%B6%88%E6%81%AF%E4%B8%AD%E9%97%B4%E4%BB%B6/" rel="next" title="消息中间件深度解析：RocketMQ、Kafka、RabbitMQ">
+                  消息中间件深度解析：RocketMQ、Kafka、RabbitMQ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2025 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">zorpan</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

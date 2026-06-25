@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"zorpan.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"mac"},"fold":{"enable":false,"height":500},"language":false,"highlight_theme":"night eighties"},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="消息中间件深度解析：RocketMQ、Kafka、RabbitMQ">
+<meta property="og:url" content="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B9%9D%E7%AB%A0%EF%BC%9A%E6%B6%88%E6%81%AF%E4%B8%AD%E9%97%B4%E4%BB%B6/index.html">
+<meta property="og:site_name" content="Java 进阶之路">
+<meta property="og:description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-18T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-25T15:26:49.499Z">
+<meta property="article:author" content="zorpan">
+<meta property="article:tag" content="Kafka">
+<meta property="article:tag" content="RocketMQ">
+<meta property="article:tag" content="消息队列">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B9%9D%E7%AB%A0%EF%BC%9A%E6%B6%88%E6%81%AF%E4%B8%AD%E9%97%B4%E4%BB%B6/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B9%9D%E7%AB%A0%EF%BC%9A%E6%B6%88%E6%81%AF%E4%B8%AD%E9%97%B4%E4%BB%B6/","path":"2026/06/18/第十九章：消息中间件/","title":"消息中间件深度解析：RocketMQ、Kafka、RabbitMQ"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>消息中间件深度解析：RocketMQ、Kafka、RabbitMQ | Java 进阶之路</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Java 进阶之路</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">深入浅出，从入门到架构师</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#19-1-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="nav-number">1.</span> <span class="nav-text">19.1 消息队列核心概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-2-RocketMQ"><span class="nav-number">2.</span> <span class="nav-text">19.2 RocketMQ</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-3-Kafka"><span class="nav-number">3.</span> <span class="nav-text">19.3 Kafka</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-4-RabbitMQ"><span class="nav-number">4.</span> <span class="nav-text">19.4 RabbitMQ</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-5-%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%80%A7%E4%BF%9D%E8%AF%81"><span class="nav-number">5.</span> <span class="nav-text">19.5 消息可靠性保证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7%E4%BF%9D%E8%AF%81"><span class="nav-number">5.1.</span> <span class="nav-text">幂等性保证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-6-%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88"><span class="nav-number">6.</span> <span class="nav-text">19.6 消息积压处理方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89"><span class="nav-number">7.</span> <span class="nav-text">面试精选</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%9F"><span class="nav-number">7.1.</span> <span class="nav-text">1. 为什么要用消息队列？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-RocketMQ%E3%80%81Kafka%E3%80%81RabbitMQ-%E6%80%8E%E4%B9%88%E9%80%89%EF%BC%9F"><span class="nav-number">7.2.</span> <span class="nav-text">2. RocketMQ、Kafka、RabbitMQ 怎么选？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%80%8E%E4%B9%88%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E5%A4%B1%EF%BC%9F"><span class="nav-number">7.3.</span> <span class="nav-text">3. 怎么保证消息不丢失？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%80%8E%E4%B9%88%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E5%B9%82%E7%AD%89%E6%80%A7%EF%BC%9F"><span class="nav-number">7.4.</span> <span class="nav-text">4. 怎么保证消息幂等性？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E6%80%8E%E4%B9%88%E5%A4%84%E7%90%86%EF%BC%9F"><span class="nav-number">7.5.</span> <span class="nav-text">5. 消息积压怎么处理？</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zorpan"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zorpan</p>
+  <div class="site-description" itemprop="description">Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">78</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zorpan" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zorpan" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B9%9D%E7%AB%A0%EF%BC%9A%E6%B6%88%E6%81%AF%E4%B8%AD%E9%97%B4%E4%BB%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zorpan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Java 进阶之路">
+      <meta itemprop="description" content="Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="消息中间件深度解析：RocketMQ、Kafka、RabbitMQ | Java 进阶之路">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          消息中间件深度解析：RocketMQ、Kafka、RabbitMQ
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-18 14:00:00" itemprop="dateCreated datePublished" datetime="2026-06-18T14:00:00+08:00">2026-06-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-06-25 23:26:49" itemprop="dateModified" datetime="2026-06-25T23:26:49+08:00">2026-06-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java-%E8%BF%9B%E9%98%B6%E4%B9%8B%E8%B7%AF/" itemprop="url" rel="index"><span itemprop="name">Java 进阶之路</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="19-1-消息队列核心概念"><a href="#19-1-消息队列核心概念" class="headerlink" title="19.1 消息队列核心概念"></a>19.1 消息队列核心概念</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">生产者 → Broker（消息中间件）→ 消费者</span><br><span class="line"></span><br><span class="line">核心模型：</span><br><span class="line">- 点对点（Queue）：一条消息只被一个消费者消费</span><br><span class="line">- 发布订阅（Topic）：一条消息被所有订阅者消费</span><br></pre></td></tr></table></figure>
+
+<p><strong>使用场景：</strong></p>
+<ul>
+<li><strong>异步处理</strong>：注册后发短信&#x2F;邮件，不用同步等待</li>
+<li><strong>系统解耦</strong>：订单服务发消息，库存&#x2F;支付服务各自消费</li>
+<li><strong>流量削峰</strong>：秒杀请求先入队，后端按能力消费</li>
+<li><strong>数据同步</strong>：数据库变更通过 Binlog 同步到 ES&#x2F;缓存</li>
+</ul>
+<hr>
+<h2 id="19-2-RocketMQ"><a href="#19-2-RocketMQ" class="headerlink" title="19.2 RocketMQ"></a>19.2 RocketMQ</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">架构：</span><br><span class="line">Producer → NameServer（注册中心）→ Broker（消息存储）→ Consumer</span><br><span class="line"></span><br><span class="line">核心概念：</span><br><span class="line">- Topic：消息主题</span><br><span class="line">- Tag：消息标签，用于过滤</span><br><span class="line">- Queue：分区，一个 Topic 有多个 Queue</span><br><span class="line">- ConsumerGroup：消费者组，组内竞争消费</span><br></pre></td></tr></table></figure>
+
+<p><strong>消息类型：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 普通消息</span></span><br><span class="line">rocketMQTemplate.convertAndSend(<span class="string">&quot;topic:order&quot;</span>, order);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 顺序消息（同一 OrderId 的消息发到同一个 Queue）</span></span><br><span class="line">rocketMQTemplate.syncSendOrderly(<span class="string">&quot;topic:order&quot;</span>, order, order.getOrderId().toString());</span><br><span class="line"></span><br><span class="line"><span class="comment">// 延迟消息</span></span><br><span class="line">Message&lt;Order&gt; message = MessageBuilder.withPayload(order).build();</span><br><span class="line">rocketMQTemplate.syncSend(<span class="string">&quot;topic:order&quot;</span>, message, <span class="number">3000</span>, <span class="number">3</span>);  <span class="comment">// 超时3s，延迟级别3（10秒后投递）</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 事务消息</span></span><br><span class="line"><span class="comment">// 1. 发送半消息（Half Message）</span></span><br><span class="line"><span class="comment">// 2. 执行本地事务</span></span><br><span class="line"><span class="comment">// 3. 根据本地事务结果提交或回滚半消息</span></span><br><span class="line"><span class="comment">// 4. 如果没有确认，Broker 定时回查本地事务状态</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="19-3-Kafka"><a href="#19-3-Kafka" class="headerlink" title="19.3 Kafka"></a>19.3 Kafka</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">架构：</span><br><span class="line">Producer → Kafka Cluster（Broker + ZooKeeper/KRaft）→ Consumer Group</span><br><span class="line"></span><br><span class="line">核心概念：</span><br><span class="line">- Topic：消息主题</span><br><span class="line">- Partition：分区，一个 Topic 有多个 Partition</span><br><span class="line">- Replica：副本，Leader + Follower</span><br><span class="line">- Offset：消费位移，记录消费进度</span><br><span class="line">- ConsumerGroup：组内每个消费者消费不同 Partition</span><br></pre></td></tr></table></figure>
+
+<p><strong>Kafka 为什么快？</strong></p>
+<ol>
+<li>顺序写磁盘（append-only）</li>
+<li>零拷贝（sendfile）</li>
+<li>批量发送和压缩</li>
+<li>分区并行</li>
+</ol>
+<p><strong>Kafka 消息可靠性：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Producer：acks=all（所有副本确认）+ retries</span><br><span class="line">Broker：min.insync.replicas=2（建议 replication.factor &gt;= 3，容忍一个副本故障）</span><br><span class="line">Consumer：手动提交 offset（enable.auto.commit=false）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="19-4-RabbitMQ"><a href="#19-4-RabbitMQ" class="headerlink" title="19.4 RabbitMQ"></a>19.4 RabbitMQ</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">架构：</span><br><span class="line">Producer → Exchange → Binding → Queue → Consumer</span><br><span class="line"></span><br><span class="line">Exchange 类型：</span><br><span class="line">- Direct：精确匹配 routing key</span><br><span class="line">- Fanout：广播到所有绑定的 Queue</span><br><span class="line">- Topic：通配符匹配（* 匹配一个词，# 匹配多个词）</span><br><span class="line">- Headers：根据消息头匹配</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="19-5-消息可靠性保证"><a href="#19-5-消息可靠性保证" class="headerlink" title="19.5 消息可靠性保证"></a>19.5 消息可靠性保证</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">生产端：</span><br><span class="line">├── 同步发送 + 重试</span><br><span class="line">├── 事务消息（性能差）</span><br><span class="line">└── 本地消息表（推荐）</span><br><span class="line"></span><br><span class="line">Broker：</span><br><span class="line">├── 同步刷盘（不丢消息，慢）</span><br><span class="line">├── 异步刷盘（可能丢少量，快）</span><br><span class="line">└── 多副本同步</span><br><span class="line"></span><br><span class="line">消费端：</span><br><span class="line">├── 手动 ACK（处理完再确认）</span><br><span class="line">├── 幂等消费（唯一 ID + 去重表）</span><br><span class="line">└── 死信队列（多次失败转入死信）</span><br></pre></td></tr></table></figure>
+
+<h3 id="幂等性保证"><a href="#幂等性保证" class="headerlink" title="幂等性保证"></a>幂等性保证</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 消费端幂等处理</span></span><br><span class="line"><span class="meta">@RocketMQMessageListener(topic = &quot;order-topic&quot;, consumerGroup = &quot;order-group&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderConsumer</span> <span class="keyword">implements</span> <span class="title class_">RocketMQListener</span>&lt;Order&gt; &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onMessage</span><span class="params">(Order order)</span> &#123;</span><br><span class="line">        <span class="comment">// 1. 查询消息是否已处理（唯一消息ID + 去重表）</span></span><br><span class="line">        <span class="keyword">if</span> (messageLogService.isProcessed(order.getMsgId())) &#123;</span><br><span class="line">            <span class="keyword">return</span>;  <span class="comment">// 已处理，跳过</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 2. 处理业务逻辑</span></span><br><span class="line">        orderService.process(order);</span><br><span class="line">        <span class="comment">// 3. 记录已处理</span></span><br><span class="line">        messageLogService.markProcessed(order.getMsgId());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="19-6-消息积压处理方案"><a href="#19-6-消息积压处理方案" class="headerlink" title="19.6 消息积压处理方案"></a>19.6 消息积压处理方案</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">问题：消费者消费速度跟不上生产速度</span><br><span class="line"></span><br><span class="line">解决方案：</span><br><span class="line">1. 增加消费者数量（需要同步增加 Queue/Partition 数量）</span><br><span class="line">2. 消费者批量消费</span><br><span class="line">3. 跳过非重要消息</span><br><span class="line">4. 临时扩容：将消息转发到更多 Queue，增加消费者</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="面试精选"><a href="#面试精选" class="headerlink" title="面试精选"></a>面试精选</h2><h3 id="1-为什么要用消息队列？"><a href="#1-为什么要用消息队列？" class="headerlink" title="1. 为什么要用消息队列？"></a>1. 为什么要用消息队列？</h3><p>异步处理（提升响应速度）、系统解耦（服务独立演进）、流量削峰（保护后端系统）。代价：系统复杂度增加、可用性降低、一致性问题。</p>
+<h3 id="2-RocketMQ、Kafka、RabbitMQ-怎么选？"><a href="#2-RocketMQ、Kafka、RabbitMQ-怎么选？" class="headerlink" title="2. RocketMQ、Kafka、RabbitMQ 怎么选？"></a>2. RocketMQ、Kafka、RabbitMQ 怎么选？</h3><p>RocketMQ：阿里开源，事务消息、延迟消息，适合电商&#x2F;金融。Kafka：高吞吐，适合大数据&#x2F;日志&#x2F;流处理。RabbitMQ：AMQP 协议，功能丰富，适合中小规模。</p>
+<h3 id="3-怎么保证消息不丢失？"><a href="#3-怎么保证消息不丢失？" class="headerlink" title="3. 怎么保证消息不丢失？"></a>3. 怎么保证消息不丢失？</h3><p>三个环节：生产端（同步发送+重试）、Broker（同步刷盘+多副本）、消费端（手动ACK+幂等消费）。RocketMQ 事务消息或本地消息表保证生产端可靠。</p>
+<h3 id="4-怎么保证消息幂等性？"><a href="#4-怎么保证消息幂等性？" class="headerlink" title="4. 怎么保证消息幂等性？"></a>4. 怎么保证消息幂等性？</h3><p>消费端用唯一消息ID+去重表&#x2F;Redis判断是否已处理。数据库操作用唯一约束保证幂等。乐观锁版本号也可以。</p>
+<h3 id="5-消息积压怎么处理？"><a href="#5-消息积压怎么处理？" class="headerlink" title="5. 消息积压怎么处理？"></a>5. 消息积压怎么处理？</h3><p>增加消费者数量（需同步增加分区）、批量消费、跳过非重要消息、临时扩容转发。根本解决：优化消费逻辑、提升消费速度。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag"># 面试</a>
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag"># 消息队列</a>
+              <a href="/tags/RocketMQ/" rel="tag"># RocketMQ</a>
+              <a href="/tags/Kafka/" rel="tag"># Kafka</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/06/18/%E7%AC%AC%E5%8D%81%E5%85%AB%E7%AB%A0%EF%BC%9ASpringCloud%E7%94%9F%E6%80%81/" rel="prev" title="Spring Cloud 微服务治理全解析">
+                  <i class="fa fa-angle-left"></i> Spring Cloud 微服务治理全解析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/06/18/%E7%AC%AC%E4%BA%8C%E5%8D%81%E7%AB%A0%EF%BC%9ARPC%E4%B8%8E%E6%9C%8D%E5%8A%A1%E9%80%9A%E4%BF%A1/" rel="next" title="RPC 原理与 Dubbo、gRPC 实战">
+                  RPC 原理与 Dubbo、gRPC 实战 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2025 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">zorpan</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

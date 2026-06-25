@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"zorpan.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"mac"},"fold":{"enable":false,"height":500},"language":false,"highlight_theme":"night eighties"},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微服务架构理论与实践">
+<meta property="og:url" content="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B8%83%E7%AB%A0%EF%BC%9A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%90%86%E8%AE%BA/index.html">
+<meta property="og:site_name" content="Java 进阶之路">
+<meta property="og:description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-18T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-25T15:26:49.499Z">
+<meta property="article:author" content="zorpan">
+<meta property="article:tag" content="Spring Cloud">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="微服务">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B8%83%E7%AB%A0%EF%BC%9A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%90%86%E8%AE%BA/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B8%83%E7%AB%A0%EF%BC%9A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%90%86%E8%AE%BA/","path":"2026/06/18/第十七章：微服务理论/","title":"微服务架构理论与实践"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>微服务架构理论与实践 | Java 进阶之路</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Java 进阶之路</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">深入浅出，从入门到架构师</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#17-1-%E5%8D%95%E4%BD%93-%E2%86%92-SOA-%E2%86%92-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%BC%94%E8%BF%9B"><span class="nav-number">1.</span> <span class="nav-text">17.1 单体 → SOA → 微服务演进</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#17-2-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99%E4%B8%8E%E6%8B%86%E5%88%86%E7%AD%96%E7%95%A5"><span class="nav-number">2.</span> <span class="nav-text">17.2 微服务设计原则与拆分策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#17-2-1-%E6%8B%86%E5%88%86%E5%8E%9F%E5%88%99"><span class="nav-number">2.1.</span> <span class="nav-text">17.2.1 拆分原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#17-2-2-%E6%8B%86%E5%88%86%E7%AD%96%E7%95%A5"><span class="nav-number">2.2.</span> <span class="nav-text">17.2.2 拆分策略</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#17-3-%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86%E5%85%A8%E6%99%AF%E5%9B%BE"><span class="nav-number">3.</span> <span class="nav-text">17.3 服务治理全景图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#17-4-CAP-%E7%90%86%E8%AE%BA%E4%B8%8E-BASE-%E7%90%86%E8%AE%BA"><span class="nav-number">4.</span> <span class="nav-text">17.4 CAP 理论与 BASE 理论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#17-4-1-CAP-%E5%AE%9A%E7%90%86"><span class="nav-number">4.1.</span> <span class="nav-text">17.4.1 CAP 定理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#17-4-2-BASE-%E7%90%86%E8%AE%BA"><span class="nav-number">4.2.</span> <span class="nav-text">17.4.2 BASE 理论</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#17-5-DDD-%E4%B8%8E%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BB%93%E5%90%88%E5%AE%9E%E8%B7%B5"><span class="nav-number">5.</span> <span class="nav-text">17.5 DDD 与微服务结合实践</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89"><span class="nav-number">6.</span> <span class="nav-text">面试精选</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%8D%95%E4%BD%93%E3%80%81SOA%E3%80%81%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">6.1.</span> <span class="nav-text">1. 单体、SOA、微服务的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-CAP-%E7%90%86%E8%AE%BA%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AA%E8%83%BD%E9%80%89%E4%B8%A4%E4%B8%AA%EF%BC%9F"><span class="nav-number">6.2.</span> <span class="nav-text">2. CAP 理论是什么？为什么只能选两个？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-BASE-%E7%90%86%E8%AE%BA%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">6.3.</span> <span class="nav-text">3. BASE 理论是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%80%8E%E4%B9%88%E6%8B%86%E5%88%86%EF%BC%9F"><span class="nav-number">6.4.</span> <span class="nav-text">4. 微服务怎么拆分？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E6%9C%89%E4%BB%80%E4%B9%88%E6%8C%91%E6%88%98%EF%BC%9F"><span class="nav-number">6.5.</span> <span class="nav-text">5. 微服务架构有什么挑战？</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zorpan"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zorpan</p>
+  <div class="site-description" itemprop="description">Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">78</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zorpan" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zorpan" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://zorpan.github.io/2026/06/18/%E7%AC%AC%E5%8D%81%E4%B8%83%E7%AB%A0%EF%BC%9A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%90%86%E8%AE%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zorpan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Java 进阶之路">
+      <meta itemprop="description" content="Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="微服务架构理论与实践 | Java 进阶之路">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          微服务架构理论与实践
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-18 10:00:00" itemprop="dateCreated datePublished" datetime="2026-06-18T10:00:00+08:00">2026-06-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-06-25 23:26:49" itemprop="dateModified" datetime="2026-06-25T23:26:49+08:00">2026-06-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java-%E8%BF%9B%E9%98%B6%E4%B9%8B%E8%B7%AF/" itemprop="url" rel="index"><span itemprop="name">Java 进阶之路</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="17-1-单体-→-SOA-→-微服务演进"><a href="#17-1-单体-→-SOA-→-微服务演进" class="headerlink" title="17.1 单体 → SOA → 微服务演进"></a>17.1 单体 → SOA → 微服务演进</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">单体架构：</span><br><span class="line">所有功能模块打包在一个应用中，共享一个数据库</span><br><span class="line">优点：开发简单、部署方便</span><br><span class="line">缺点：耦合严重、扩展困难、技术栈单一</span><br><span class="line"></span><br><span class="line">SOA（面向服务架构）：</span><br><span class="line">将功能拆分为独立的服务，通过 ESB（企业服务总线）通信</span><br><span class="line">优点：服务解耦、可复用</span><br><span class="line">缺点：ESB 重量级、治理复杂</span><br><span class="line"></span><br><span class="line">微服务架构：</span><br><span class="line">每个服务独立部署、独立数据库、轻量级通信（HTTP/RPC）</span><br><span class="line">优点：独立部署、技术栈自由、弹性扩展</span><br><span class="line">缺点：分布式复杂性、运维成本高</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>单体</th>
+<th>SOA</th>
+<th>微服务</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>粒度</td>
+<td>整个应用</td>
+<td>粗粒度服务</td>
+<td>细粒度服务</td>
+</tr>
+<tr>
+<td>通信</td>
+<td>方法调用</td>
+<td>ESB</td>
+<td>HTTP&#x2F;RPC</td>
+</tr>
+<tr>
+<td>数据库</td>
+<td>共享</td>
+<td>共享&#x2F;独立</td>
+<td>独立</td>
+</tr>
+<tr>
+<td>部署</td>
+<td>整体部署</td>
+<td>整体&#x2F;独立</td>
+<td>独立部署</td>
+</tr>
+<tr>
+<td>技术栈</td>
+<td>统一</td>
+<td>统一</td>
+<td>自由选择</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="17-2-微服务设计原则与拆分策略"><a href="#17-2-微服务设计原则与拆分策略" class="headerlink" title="17.2 微服务设计原则与拆分策略"></a>17.2 微服务设计原则与拆分策略</h2><h3 id="17-2-1-拆分原则"><a href="#17-2-1-拆分原则" class="headerlink" title="17.2.1 拆分原则"></a>17.2.1 拆分原则</h3><p><strong>单一职责原则</strong>：每个服务只负责一个业务领域<br><strong>高内聚低耦合</strong>：服务内部紧密关联，服务之间松散依赖<br><strong>领域驱动拆分</strong>：按限界上下文（Bounded Context）拆分</p>
+<h3 id="17-2-2-拆分策略"><a href="#17-2-2-拆分策略" class="headerlink" title="17.2.2 拆分策略"></a>17.2.2 拆分策略</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">垂直拆分：按业务领域拆分</span><br><span class="line">├── 用户服务（用户管理、认证授权）</span><br><span class="line">├── 订单服务（订单创建、支付、退款）</span><br><span class="line">├── 商品服务（商品管理、库存）</span><br><span class="line">└── 通知服务（短信、邮件、推送）</span><br><span class="line"></span><br><span class="line">水平拆分：按通用能力拆分</span><br><span class="line">├── 网关服务（路由、限流、鉴权）</span><br><span class="line">├── 配置中心（动态配置管理）</span><br><span class="line">└── 注册中心（服务注册与发现）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="17-3-服务治理全景图"><a href="#17-3-服务治理全景图" class="headerlink" title="17.3 服务治理全景图"></a>17.3 服务治理全景图</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">微服务核心能力：</span><br><span class="line">├── 服务注册与发现（Nacos / Eureka）</span><br><span class="line">├── 服务调用（OpenFeign / RestTemplate）</span><br><span class="line">├── 负载均衡（LoadBalancer / Ribbon）</span><br><span class="line">├── 服务熔断与降级（Sentinel / Resilience4j）</span><br><span class="line">├── API 网关（Spring Cloud Gateway）</span><br><span class="line">├── 配置中心（Nacos Config / Apollo）</span><br><span class="line">├── 链路追踪（SkyWalking / Zipkin）</span><br><span class="line">├── 分布式事务（Seata）</span><br><span class="line">└── 消息队列（RocketMQ / Kafka）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="17-4-CAP-理论与-BASE-理论"><a href="#17-4-CAP-理论与-BASE-理论" class="headerlink" title="17.4 CAP 理论与 BASE 理论"></a>17.4 CAP 理论与 BASE 理论</h2><h3 id="17-4-1-CAP-定理"><a href="#17-4-1-CAP-定理" class="headerlink" title="17.4.1 CAP 定理"></a>17.4.1 CAP 定理</h3><p>分布式系统最多同时满足以下三项中的两项：</p>
+<ul>
+<li><strong>C（Consistency）一致性</strong>：所有节点看到相同的数据</li>
+<li><strong>A（Availability）可用性</strong>：每个请求都能得到响应</li>
+<li><strong>P（Partition Tolerance）分区容错</strong>：网络分区时系统仍能运行</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CA（放弃分区容错）：单机数据库</span><br><span class="line">CP（放弃可用性）：ZooKeeper、HBase、Redis Cluster</span><br><span class="line">AP（放弃一致性）：Eureka、CouchDB、DynamoDB</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>分布式系统必须保证 P（网络分区不可避免），所以只能在 C 和 A 之间选择。</strong></p>
+</blockquote>
+<h3 id="17-4-2-BASE-理论"><a href="#17-4-2-BASE-理论" class="headerlink" title="17.4.2 BASE 理论"></a>17.4.2 BASE 理论</h3><p>BASE 是 CAP 的折中方案：</p>
+<ul>
+<li><strong>BA（Basically Available）基本可用</strong>：系统在故障时保证核心功能可用</li>
+<li><strong>S（Soft State）软状态</strong>：允许系统存在中间状态（如数据同步中）</li>
+<li><strong>E（Eventually Consistent）最终一致性</strong>：经过一段时间后，所有节点数据一致</li>
+</ul>
+<blockquote>
+<p><strong>大多数互联网系统选择 AP + BASE：放弃强一致性，保证可用性，通过补偿机制实现最终一致性。</strong></p>
+</blockquote>
+<hr>
+<h2 id="17-5-DDD-与微服务结合实践"><a href="#17-5-DDD-与微服务结合实践" class="headerlink" title="17.5 DDD 与微服务结合实践"></a>17.5 DDD 与微服务结合实践</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">DDD 指导微服务拆分：</span><br><span class="line">1. 战略设计：识别限界上下文 → 每个上下文对应一个微服务</span><br><span class="line">2. 战术设计：每个微服务内部使用实体、值对象、聚合根、领域事件</span><br><span class="line"></span><br><span class="line">示例（电商系统）：</span><br><span class="line">├── 用户上下文 → 用户服务</span><br><span class="line">│   └── 聚合根：User（包含 Address 值对象）</span><br><span class="line">├── 商品上下文 → 商品服务</span><br><span class="line">│   └── 聚合根：Product（包含 SKU）</span><br><span class="line">├── 订单上下文 → 订单服务</span><br><span class="line">│   └── 聚合根：Order（包含 OrderItem）</span><br><span class="line">├── 支付上下文 → 支付服务</span><br><span class="line">│   └── 聚合根：Payment</span><br><span class="line">└── 库存上下文 → 库存服务</span><br><span class="line">    └── 聚合根：Inventory</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="面试精选"><a href="#面试精选" class="headerlink" title="面试精选"></a>面试精选</h2><h3 id="1-单体、SOA、微服务的区别？"><a href="#1-单体、SOA、微服务的区别？" class="headerlink" title="1. 单体、SOA、微服务的区别？"></a>1. 单体、SOA、微服务的区别？</h3><p>单体所有功能打包在一起，共享数据库。SOA 通过 ESB 集成粗粒度服务。微服务每个服务独立部署、独立数据库、轻量级通信。微服务是 SOA 的进一步细化，强调去中心化、独立部署、技术栈自由。</p>
+<h3 id="2-CAP-理论是什么？为什么只能选两个？"><a href="#2-CAP-理论是什么？为什么只能选两个？" class="headerlink" title="2. CAP 理论是什么？为什么只能选两个？"></a>2. CAP 理论是什么？为什么只能选两个？</h3><p>分布式系统最多满足一致性、可用性、分区容错中的两项。网络分区不可避免（必须保证 P），所以只能在 C（一致性）和 A（可用性）之间选择。CP 系统（如 ZooKeeper）保证一致性牺牲可用性，AP 系统（如 Eureka）保证可用性牺牲强一致性。</p>
+<h3 id="3-BASE-理论是什么？"><a href="#3-BASE-理论是什么？" class="headerlink" title="3. BASE 理论是什么？"></a>3. BASE 理论是什么？</h3><p>BASE 是 CAP 的折中：基本可用（核心功能可用）、软状态（允许中间状态）、最终一致性（一段时间后数据一致）。大多数互联网系统选择 AP + BASE，通过补偿机制实现最终一致性。</p>
+<h3 id="4-微服务怎么拆分？"><a href="#4-微服务怎么拆分？" class="headerlink" title="4. 微服务怎么拆分？"></a>4. 微服务怎么拆分？</h3><p>按业务领域垂直拆分（用户、订单、商品），遵循单一职责和高内聚低耦合。推荐用 DDD 限界上下文指导拆分：每个限界上下文对应一个微服务，内部使用聚合根管理数据一致性。</p>
+<h3 id="5-微服务架构有什么挑战？"><a href="#5-微服务架构有什么挑战？" class="headerlink" title="5. 微服务架构有什么挑战？"></a>5. 微服务架构有什么挑战？</h3><p>服务间通信、分布式事务、服务治理（注册发现、负载均衡、熔断降级）、配置管理、链路追踪、部署运维复杂度。需要引入完整的服务治理框架（Spring Cloud）和 DevOps 工具链。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag"># 面试</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag"># 分布式</a>
+              <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag"># 微服务</a>
+              <a href="/tags/Spring-Cloud/" rel="tag"># Spring Cloud</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/06/17/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%EF%BC%9AMyBatis/" rel="prev" title="MyBatis 深度解析：执行流程、动态 SQL 与插件机制">
+                  <i class="fa fa-angle-left"></i> MyBatis 深度解析：执行流程、动态 SQL 与插件机制
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/06/18/%E7%AC%AC%E5%8D%81%E5%85%AB%E7%AB%A0%EF%BC%9ASpringCloud%E7%94%9F%E6%80%81/" rel="next" title="Spring Cloud 微服务治理全解析">
+                  Spring Cloud 微服务治理全解析 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2025 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">zorpan</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

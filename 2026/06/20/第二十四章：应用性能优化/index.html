@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"zorpan.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"mac"},"fold":{"enable":false,"height":500},"language":false,"highlight_theme":"night eighties"},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 应用性能优化实战">
+<meta property="og:url" content="https://zorpan.github.io/2026/06/20/%E7%AC%AC%E4%BA%8C%E5%8D%81%E5%9B%9B%E7%AB%A0%EF%BC%9A%E5%BA%94%E7%94%A8%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="Java 进阶之路">
+<meta property="og:description" content="本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-20T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-25T15:26:49.499Z">
+<meta property="article:author" content="zorpan">
+<meta property="article:tag" content="性能优化">
+<meta property="article:tag" content="调优">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://zorpan.github.io/2026/06/20/%E7%AC%AC%E4%BA%8C%E5%8D%81%E5%9B%9B%E7%AB%A0%EF%BC%9A%E5%BA%94%E7%94%A8%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://zorpan.github.io/2026/06/20/%E7%AC%AC%E4%BA%8C%E5%8D%81%E5%9B%9B%E7%AB%A0%EF%BC%9A%E5%BA%94%E7%94%A8%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/","path":"2026/06/20/第二十四章：应用性能优化/","title":"Java 应用性能优化实战"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Java 应用性能优化实战 | Java 进阶之路</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Java 进阶之路</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">深入浅出，从入门到架构师</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#24-1-%E4%BB%A3%E7%A0%81%E5%B1%82%E9%9D%A2%E4%BC%98%E5%8C%96"><span class="nav-number">1.</span> <span class="nav-text">24.1 代码层面优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#24-2-%E6%95%B0%E6%8D%AE%E5%BA%93%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98"><span class="nav-number">2.</span> <span class="nav-text">24.2 数据库性能调优</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#24-3-%E7%BC%93%E5%AD%98%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5"><span class="nav-number">3.</span> <span class="nav-text">24.3 缓存优化策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#24-4-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E8%B0%83%E4%BC%98"><span class="nav-number">4.</span> <span class="nav-text">24.4 线程池调优</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89"><span class="nav-number">5.</span> <span class="nav-text">面试精选</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%80%8E%E4%B9%88%E5%81%9A%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%EF%BC%9F"><span class="nav-number">5.1.</span> <span class="nav-text">1. 怎么做性能优化？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%A4%A7%E8%A1%A8%E6%9F%A5%E8%AF%A2%E6%80%8E%E4%B9%88%E4%BC%98%E5%8C%96%EF%BC%9F"><span class="nav-number">5.2.</span> <span class="nav-text">2. 大表查询怎么优化？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%80%8E%E4%B9%88%E8%B0%83%E4%BC%98%EF%BC%9F"><span class="nav-number">5.3.</span> <span class="nav-text">3. 线程池怎么调优？</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zorpan"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zorpan</p>
+  <div class="site-description" itemprop="description">Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">78</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zorpan" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zorpan" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://zorpan.github.io/2026/06/20/%E7%AC%AC%E4%BA%8C%E5%8D%81%E5%9B%9B%E7%AB%A0%EF%BC%9A%E5%BA%94%E7%94%A8%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zorpan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Java 进阶之路">
+      <meta itemprop="description" content="Java 开发工程师学习进阶博客 — 聚焦 JVM、并发、Spring 源码、分布式架构与性能优化">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Java 应用性能优化实战 | Java 进阶之路">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java 应用性能优化实战
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-20 10:00:00" itemprop="dateCreated datePublished" datetime="2026-06-20T10:00:00+08:00">2026-06-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-06-25 23:26:49" itemprop="dateModified" datetime="2026-06-25T23:26:49+08:00">2026-06-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java-%E8%BF%9B%E9%98%B6%E4%B9%8B%E8%B7%AF/" itemprop="url" rel="index"><span itemprop="name">Java 进阶之路</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文是「Java 进阶之路」系列的一部分，聚焦实战与面试。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="24-1-代码层面优化"><a href="#24-1-代码层面优化" class="headerlink" title="24.1 代码层面优化"></a>24.1 代码层面优化</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 减少对象创建</span></span><br><span class="line"><span class="comment">// 不推荐：循环内创建对象</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; list.size(); i++) &#123;</span><br><span class="line">    <span class="type">SimpleDateFormat</span> <span class="variable">sdf</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SimpleDateFormat</span>(<span class="string">&quot;yyyy-MM-dd&quot;</span>);  <span class="comment">// 每次创建</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 推荐：复用对象</span></span><br><span class="line"><span class="type">SimpleDateFormat</span> <span class="variable">sdf</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SimpleDateFormat</span>(<span class="string">&quot;yyyy-MM-dd&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 避免 N+1 查询</span></span><br><span class="line"><span class="comment">// 不推荐：循环查数据库</span></span><br><span class="line"><span class="keyword">for</span> (Order order : orders) &#123;</span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> userDao.findById(order.getUserId());  <span class="comment">// N 次查询</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 推荐：批量查询</span></span><br><span class="line">List&lt;Long&gt; userIds = orders.stream().map(Order::getUserId).collect(toList());</span><br><span class="line">Map&lt;Long, User&gt; userMap = userDao.findByIds(userIds).stream()</span><br><span class="line">    .collect(Collectors.toMap(User::getId, u -&gt; u));</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. 懒加载</span></span><br><span class="line"><span class="comment">// 使用 @Lazy 延迟初始化 Bean</span></span><br><span class="line"><span class="comment">// 使用 Stream 的延迟执行特性</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. 使用 StringBuilder 拼接字符串</span></span><br><span class="line"><span class="comment">// 5. 集合初始化时指定容量</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(expectedSize);</span><br><span class="line"><span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;(expectedSize * <span class="number">4</span> / <span class="number">3</span> + <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="24-2-数据库性能调优"><a href="#24-2-数据库性能调优" class="headerlink" title="24.2 数据库性能调优"></a>24.2 数据库性能调优</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 慢 SQL 优化</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">user</span> <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Tom&#x27;</span>;</span><br><span class="line"><span class="comment">-- type=ALL → 全表扫描，需要加索引</span></span><br><span class="line"><span class="comment">-- Using filesort → 需要优化 ORDER BY</span></span><br><span class="line"><span class="comment">-- Using temporary → 需要优化 GROUP BY</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. 批量操作</span></span><br><span class="line"><span class="comment">-- 不推荐</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> <span class="keyword">user</span> <span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="string">&#x27;Tom&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT INTO</span> <span class="keyword">user</span> <span class="keyword">VALUES</span> (<span class="number">2</span>, <span class="string">&#x27;Jerry&#x27;</span>);</span><br><span class="line"><span class="comment">-- 推荐</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> <span class="keyword">user</span> <span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="string">&#x27;Tom&#x27;</span>), (<span class="number">2</span>, <span class="string">&#x27;Jerry&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. 连接池配置</span></span><br><span class="line"><span class="comment">-- HikariCP 推荐配置</span></span><br><span class="line"><span class="comment">-- maximumPoolSize = CPU 核心数 * 2 + 1</span></span><br><span class="line"><span class="comment">-- minimumIdle = maximumPoolSize</span></span><br><span class="line"><span class="comment">-- connectionTimeout = 30000</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="24-3-缓存优化策略"><a href="#24-3-缓存优化策略" class="headerlink" title="24.3 缓存优化策略"></a>24.3 缓存优化策略</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">热点 Key 处理：</span><br><span class="line">├── 本地缓存（Caffeine）缓存热点数据</span><br><span class="line">├── Redis Key 分片（key_1, key_2, ... key_N）</span><br><span class="line">└── 读写分离（主写从读）</span><br><span class="line"></span><br><span class="line">缓存一致性：</span><br><span class="line">├── Cache Aside：先更新数据库，再删除缓存</span><br><span class="line">├── 延迟双删：更新 DB → 删缓存 → 延迟再删缓存</span><br><span class="line">└── 监听 Binlog：通过 Canal 监听 MySQL 变更同步到 Redis</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="24-4-线程池调优"><a href="#24-4-线程池调优" class="headerlink" title="24.4 线程池调优"></a>24.4 线程池调优</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 线程池监控</span></span><br><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">pool</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 动态调整线程池参数</span></span><br><span class="line">pool.setCorePoolSize(newCoreSize);</span><br><span class="line">pool.setMaximumPoolSize(newMaxSize);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 拒绝策略选择</span></span><br><span class="line"><span class="comment">// AbortPolicy：抛异常（默认）</span></span><br><span class="line"><span class="comment">// CallerRunsPolicy：调用者执行（推荐，自动降速）</span></span><br><span class="line"><span class="comment">// DiscardOldestPolicy：丢弃最老的任务</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="面试精选"><a href="#面试精选" class="headerlink" title="面试精选"></a>面试精选</h2><h3 id="1-怎么做性能优化？"><a href="#1-怎么做性能优化？" class="headerlink" title="1. 怎么做性能优化？"></a>1. 怎么做性能优化？</h3><p>四个层面：代码（减少对象创建、避免N+1、懒加载）、数据库（索引优化、批量操作、连接池配置）、缓存（多级缓存、热点Key处理）、JVM（堆大小调优、GC选择）。优先解决瓶颈最大的环节。</p>
+<h3 id="2-大表查询怎么优化？"><a href="#2-大表查询怎么优化？" class="headerlink" title="2. 大表查询怎么优化？"></a>2. 大表查询怎么优化？</h3><p>索引优化（覆盖索引、联合索引）、分页优化（延迟关联、游标分页）、读写分离、分库分表、缓存热点数据。</p>
+<h3 id="3-线程池怎么调优？"><a href="#3-线程池怎么调优？" class="headerlink" title="3. 线程池怎么调优？"></a>3. 线程池怎么调优？</h3><p>CPU密集型：核心线程数&#x3D;CPU核心数+1。IO密集型：核心线程数&#x3D;CPU核心数<em>2。通用公式：CPU核心数</em>(1+IO等待时间&#x2F;CPU计算时间)。生产通过压测确定最优值。拒绝策略推荐 CallerRunsPolicy。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95/" rel="tag"># 面试</a>
+              <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag"># 性能优化</a>
+              <a href="/tags/%E8%B0%83%E4%BC%98/" rel="tag"># 调优</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/06/19/%E7%AC%AC%E4%BA%8C%E5%8D%81%E4%B8%89%E7%AB%A0%EF%BC%9A%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/" rel="prev" title="高可用架构设计：限流、熔断、降级">
+                  <i class="fa fa-angle-left"></i> 高可用架构设计：限流、熔断、降级
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/06/20/%E7%AC%AC%E4%BA%8C%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E9%AB%98%E5%B9%B6%E5%8F%91%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" rel="next" title="高并发系统设计：秒杀、短链、Feed流">
+                  高并发系统设计：秒杀、短链、Feed流 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2025 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">zorpan</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
