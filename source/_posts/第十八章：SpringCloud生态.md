@@ -130,8 +130,8 @@ spring:
 // 资源定义
 @SentinelResource(
     value = "getUser",
-    blockHandler = "handleBlock",     // 限流/熔断处理
-    fallback = "handleFallback"       // 业务异常降级
+    blockHandler = "handleBlock",     // 限流/系统保护触发时处理（BlockException）
+    fallback = "handleFallback"       // 业务异常和熔断降级处理
 )
 public User getUser(Long id) {
     return userClient.getUser(id);
@@ -236,7 +236,7 @@ public class ConfigController {
 1. TM 开启全局事务 → TC 注册全局事务
 2. RM 执行本地事务 → TC 注册分支事务
    ├── 一阶段：执行 SQL + 记录 undo_log（before/after image）
-   └── 二阶段提交：删除 undo_log
+   └── 二阶段提交：异步清理 undo_log
    └── 二阶段回滚：根据 undo_log 反向补偿
 
 优点：对业务无侵入，自动回滚

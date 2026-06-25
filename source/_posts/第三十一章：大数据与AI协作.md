@@ -70,6 +70,7 @@ public class AIController {
     }
 
     // RAG（检索增强生成）
+    // 注意：Spring AI 版本迭代较快，API 可能有变化，请参考官方最新文档
     @GetMapping("/ask")
     public String ask(@RequestParam String question) {
         return chatClient.prompt()

@@ -72,7 +72,7 @@ log.info("用户登录成功, userId={}", userId);
 
 ```
 架构：
-应用（暴露 /actuator/prometheus 端点）
+应用（暴露 /actuator/prometheus 端点，Spring Boot Actuator）
     → Prometheus（拉取指标数据）
     → Grafana（可视化展示）
     → AlertManager（告警通知）
@@ -111,4 +111,4 @@ SkyWalking 架构：
 
 ### 3. Prometheus 的工作原理？
 
-Pull 模型：Prometheus 定期从应用的 /metrics 端点拉取指标数据，存储在时序数据库中。PromQL 查询语言做聚合分析。AlertManager 配置告警规则，触发后通过邮件/钉钉/Slack 通知。
+Pull 模型：Prometheus 定期从应用的 /actuator/prometheus 端点（Spring Boot Actuator）拉取指标数据，存储在时序数据库中。PromQL 查询语言做聚合分析。AlertManager 配置告警规则，触发后通过邮件/钉钉/Slack 通知。

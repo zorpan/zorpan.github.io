@@ -18,7 +18,7 @@ categories:
 
 ```
 ZAB（ZooKeeper Atomic Broadcast）协议：
-保证分布式事务的原子性和顺序一致性
+保证崩溃恢复时已提交事务不丢失，以及原子广播时消息的顺序一致性
 
 三种角色：
 - Leader：处理写请求，发起提案投票
@@ -26,7 +26,7 @@ ZAB（ZooKeeper Atomic Broadcast）协议：
 - Observer：处理读请求，不参与投票（提升读性能）
 
 选举过程（Leader Election）：
-1. 每个节点投票给自己，zxid 最大的优先
+1. 每个节点投票给自己，zxid 最大的优先，zxid 相同时 myid 最大的优先
 2. 收到其他节点的投票，比较 zxid 和 myid
 3. 更新投票为 zxid 最大的节点
 4. 超过半数同意则当选 Leader

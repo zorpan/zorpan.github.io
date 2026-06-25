@@ -102,7 +102,7 @@ message UserResponse {
 
 ### 1. RPC 和 HTTP 的区别？
 
-RPC 是远程过程调用的泛称，可以基于各种协议（TCP/HTTP2）。HTTP 是应用层协议。RPC 框架（Dubbo/gRPC）通常比裸 HTTP 调用提供更丰富的服务治理能力（负载均衡、熔断、限流）。gRPC 基于 HTTP/2 + Protobuf，兼顾性能和标准化。
+RPC 是一种远程调用范式，可以基于各种协议（TCP/HTTP2）实现。HTTP 是一种传输协议，很多 RPC 框架（如 gRPC）底层使用 HTTP/2 作为传输层。RPC 框架通常比裸 HTTP 调用提供更丰富的服务治理能力（负载均衡、熔断、限流）。
 
 ### 2. Dubbo 的核心原理？
 
